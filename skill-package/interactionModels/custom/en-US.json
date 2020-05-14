@@ -1,0 +1,141 @@
+{
+    "interactionModel": {
+        "languageModel": {
+            "invocationName": "powers",
+            "intents": [
+                {
+                    "name": "AMAZON.CancelIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.HelpIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.StopIntent",
+                    "samples": []
+                },
+                {
+                    "name": "NameIntent",
+                    "slots": [
+                       
+                        {
+                            "name": "CustomName",
+                            "type": "AMAZON.FictionalCharacter"
+                        }
+                    ],
+                    "samples": [
+                        "I am {CustomName}",
+                        "My name is {CustomName}",
+                        "{CustomName}",
+                        "Hi my name is {CustomName}"
+
+                    ]
+                },
+                {
+                    "name": "AMAZON.NavigateHomeIntent",
+                    "samples": []
+                },
+                {
+                    "name": "CharacterSelectionScreenIntent",
+                    "slots": [
+                        {
+                            "name": "Characters",
+                            "type": "CharacterSlots"
+                        }
+                    ],
+                    "samples": [
+                        "I want {Characters}",
+                        "{Characters} please",
+                        "Let's go with {Characters}",
+                        "{Characters}",
+                        "I will pick {Characters}",
+                        "Let's Go {Characters}"
+                    ]
+                }
+            ],
+            "types": [
+                {
+                    "name": "CharacterSlots",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "Lillith",
+                                "synonyms": [
+                                    "Lillieth",
+                                    "Lilleth",
+                                    "Lillath",
+                                    "Lilliath"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "Randell",
+                                "synonyms": [
+                                    "Randle",
+                                    "Randel",
+                                    "Randy"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "Charity",
+                                "synonyms": [
+                                    "Chairity",
+                                    "Chairty",
+                                    "Charitie"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        "dialog": {
+            "intents": [
+                {
+                    "name": "CharacterSelectionScreenIntent",
+                    "confirmationRequired": true,
+                    "prompts": {
+                        "confirmation": "Confirm.Intent.866257412035"
+                    },
+                    "slots": [
+                        {
+                            "name": "Characters",
+                            "type": "CharacterSlots",
+                            "confirmationRequired": false,
+                            "elicitationRequired": false,
+                            "prompts": {}
+                        }
+                    ]
+                }
+            ],
+            "delegationStrategy": "ALWAYS"
+        },
+        "prompts": [
+            {
+                "id": "Confirm.Intent.866257412035",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "I heard {Characters} , this is okay?"
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "I said {Characters} , is this who you want to pick?"
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "So you want {Characters} , correct?"
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "Just double checking you did say {Characters} ,right?"
+                    }
+                ]
+            }
+        ]
+    }
+}
