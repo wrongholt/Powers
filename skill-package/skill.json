@@ -3,7 +3,7 @@
     "publishingInformation": {
       "locales": {
         "en-US": {
-          "summary": "Sample Short Description",
+          "summary": "Fighting game that is turned based",
           "examplePhrases": [
             "Alexa open hello world",
             "hello",
@@ -22,7 +22,12 @@
       "custom": {
         "endpoint": {
           "uri": "arn:aws:lambda:us-east-1:837782226885:function:ask-powers-default-default-1589308796931"
-        }
+        },
+        "interfaces": [
+          {
+            "type": "ALEXA_PRESENTATION_APL"
+          }
+        ]
       }
     },
     "manifestVersion": "1.0"

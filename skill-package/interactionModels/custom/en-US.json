@@ -18,18 +18,36 @@
                 {
                     "name": "NameIntent",
                     "slots": [
-                       
                         {
                             "name": "CustomName",
                             "type": "AMAZON.FictionalCharacter"
+                        },
+                        {
+                            "name": "DEName",
+                            "type": "AMAZON.DE_FIRST_NAME"
+                        },
+                        {
+                            "name": "GBName",
+                            "type": "AMAZON.GB_FIRST_NAME"
+                        },
+                        {
+                            "name": "Name",
+                            "type": "AMAZON.FirstName"
                         }
                     ],
                     "samples": [
                         "I am {CustomName}",
                         "My name is {CustomName}",
-                        "{CustomName}",
-                        "Hi my name is {CustomName}"
-
+                        "Hi my name is {CustomName}",
+                        "I am {Name}",
+                        "My name is {Name}",
+                        "Hi my name is {Name}",
+                        "I am {DEName}",
+                        "My name is {DEName}",
+                        "Hi my name is {DEName}",
+                        "I am {GBName}",
+                        "My name is {GBName}",
+                        "Hi my name is {GBName}"
                     ]
                 },
                 {
@@ -37,7 +55,7 @@
                     "samples": []
                 },
                 {
-                    "name": "CharacterSelectionScreenIntent",
+                    "name": "CharacterSelectedIntent",
                     "slots": [
                         {
                             "name": "Characters",
@@ -51,6 +69,15 @@
                         "{Characters}",
                         "I will pick {Characters}",
                         "Let's Go {Characters}"
+                    ]
+                },
+                {
+                    "name": "CharacterSelectionScreenIntent",
+                    "slots": [],
+                    "samples": [
+                        "Lets Fight",
+                        "I want to fight",
+                        "pick character"
                     ]
                 }
             ],
@@ -88,54 +115,70 @@
                                     "Charitie"
                                 ]
                             }
+                        },
+                        {
+                            "name": {
+                                "value": "Sharpie Sharp",
+                                "synonyms": [
+                                    "Sharpie",
+                                    "sharp",
+                                    "ss"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "Lars Thundersquat",
+                                "synonyms": [
+                                    "Lars",
+                                    "Thundersquat",
+                                    "Thunder"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "Edge",
+                                "synonyms": [
+                                    "ege",
+                                    "edg",
+                                    "etge"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "Argus",
+                                "synonyms": [
+                                    "argis",
+                                    "arrguss",
+                                    "areguss"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "Karrigan",
+                                "synonyms": [
+                                    "karrigin",
+                                    "karragan",
+                                    "karagin"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "Electric Mean",
+                                "synonyms": [
+                                    "Electric meen",
+                                    "electric",
+                                    "mean"
+                                ]
+                            }
                         }
                     ]
                 }
             ]
-        },
-        "dialog": {
-            "intents": [
-                {
-                    "name": "CharacterSelectionScreenIntent",
-                    "confirmationRequired": true,
-                    "prompts": {
-                        "confirmation": "Confirm.Intent.866257412035"
-                    },
-                    "slots": [
-                        {
-                            "name": "Characters",
-                            "type": "CharacterSlots",
-                            "confirmationRequired": false,
-                            "elicitationRequired": false,
-                            "prompts": {}
-                        }
-                    ]
-                }
-            ],
-            "delegationStrategy": "ALWAYS"
-        },
-        "prompts": [
-            {
-                "id": "Confirm.Intent.866257412035",
-                "variations": [
-                    {
-                        "type": "PlainText",
-                        "value": "I heard {Characters} , this is okay?"
-                    },
-                    {
-                        "type": "PlainText",
-                        "value": "I said {Characters} , is this who you want to pick?"
-                    },
-                    {
-                        "type": "PlainText",
-                        "value": "So you want {Characters} , correct?"
-                    },
-                    {
-                        "type": "PlainText",
-                        "value": "Just double checking you did say {Characters} ,right?"
-                    }
-                ]
-            }
-        ]
+        }
     }
 }
