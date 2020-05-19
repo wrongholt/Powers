@@ -1,5 +1,4 @@
 {
-    "document": {
         "type": "APL",
         "version": "1.3",
         "settings": {},
@@ -328,7 +327,6 @@
                     "listData": "${payload.listTemplate2ListData.listPage.listItems}"
                 }
             ]
-        }
     },
     "datasources": {
         "listTemplate2Metadata": {
