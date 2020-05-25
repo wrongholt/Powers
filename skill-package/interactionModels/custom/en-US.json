@@ -79,6 +79,29 @@
                         "I want to fight",
                         "pick character"
                     ]
+                },
+                {
+                    "name": "RandomCharacterSelectedIntent",
+                    "slots": [],
+                    "samples": [
+                        "Random Character",
+                        "Random Player",
+                        "Random Power"
+                    ]
+                },
+                {
+                    "name": "PlayerFightIntent",
+                    "slots": [
+                        {
+                            "name": "Move",
+                            "type": "Moves"
+                        }
+                    ],
+                    "samples": [
+                        "{Move} {Move} {Move}",
+                        "{Move} {Move}",
+                        "{Move}"
+                    ]
                 }
             ],
             "types": [
@@ -173,6 +196,76 @@
                                     "Electric meen",
                                     "electric",
                                     "mean"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Moves",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "block",
+                                "synonyms": [
+                                    "parry",
+                                    "shield",
+                                    "guard"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "light attack",
+                                "synonyms": [
+                                    "small attack",
+                                    "lite",
+                                    "lite attack",
+                                    "light"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "heavy attack",
+                                "synonyms": [
+                                    "big attack",
+                                    "hard attack",
+                                    "heavy"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "forward",
+                                "synonyms": [
+                                    "close in",
+                                    "closer"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "back",
+                                "synonyms": [
+                                    "open",
+                                    "backup"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "down",
+                                "synonyms": [
+                                    "crouch"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "up",
+                                "synonyms": [
+                                    "jump"
                                 ]
                             }
                         }
