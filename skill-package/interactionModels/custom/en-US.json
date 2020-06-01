@@ -206,72 +206,213 @@
                     "values": [
                         {
                             "name": {
-                                "value": "block",
+                                "value": "power move",
+                                "synonyms": []
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "use power move",
+                                "synonyms": []
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "forward, up, heavy attack",
                                 "synonyms": [
-                                    "parry",
-                                    "shield",
-                                    "guard"
+                                    "forward up heavy attack"
                                 ]
                             }
                         },
                         {
                             "name": {
-                                "value": "light attack",
+                                "value": "back, forward, heavy attack",
                                 "synonyms": [
-                                    "small attack",
-                                    "lite",
-                                    "lite attack",
-                                    "light"
+                                    "back forward heavy attack"
                                 ]
                             }
                         },
                         {
                             "name": {
-                                "value": "heavy attack",
+                                "value": "forward, heavy attack, heavy attack",
                                 "synonyms": [
-                                    "big attack",
-                                    "hard attack",
-                                    "heavy"
+                                    "forward heavy attack heavy attack"
                                 ]
                             }
                         },
                         {
                             "name": {
-                                "value": "forward",
+                                "value": "forward, forward, heavy attack",
                                 "synonyms": [
-                                    "close in",
-                                    "closer"
+                                    "forward forward heavy attack"
                                 ]
                             }
                         },
                         {
                             "name": {
-                                "value": "back",
+                                "value": "down, forward, heavy attack",
                                 "synonyms": [
-                                    "open",
-                                    "backup"
+                                    "down forward heavy attack"
                                 ]
                             }
                         },
                         {
                             "name": {
-                                "value": "down",
+                                "value": "up, forward, heavy attack",
                                 "synonyms": [
-                                    "crouch"
+                                    "up forward heavy attack"
                                 ]
                             }
                         },
                         {
                             "name": {
-                                "value": "up",
+                                "value": "down, up, heavy attack",
                                 "synonyms": [
-                                    "jump"
+                                    "down up heavy attack"
                                 ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "forward, down, light attack",
+                                "synonyms": [
+                                    "forward down light attack"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "down, down, light attack",
+                                "synonyms": [
+                                    "down down light attack"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "down, up, light attack",
+                                "synonyms": [
+                                    "down up light attack"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "forward, light attack, light attack",
+                                "synonyms": [
+                                    "forward light attack light attack"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "down, forward, light attack",
+                                "synonyms": [
+                                    "down forward light attack"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "foward, up, light attack",
+                                "synonyms": [
+                                    "foward up light attack"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "forward, forward, light attack",
+                                "synonyms": [
+                                    "forward forward light attack"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "back, forward, light attack",
+                                "synonyms": [
+                                    "back forward light attack"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "light attack"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "heavy attack"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "forward"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "back"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "down"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "up"
                             }
                         }
                     ]
                 }
             ]
-        }
+        },
+        "dialog": {
+            "intents": [
+                {
+                    "name": "PlayerFightIntent",
+                    "confirmationRequired": false,
+                    "prompts": {},
+                    "slots": [
+                        {
+                            "name": "Move",
+                            "type": "Moves",
+                            "confirmationRequired": false,
+                            "elicitationRequired": false,
+                            "prompts": {},
+                            "validations": [
+                                {
+                                    "type": "hasEntityResolutionMatch",
+                                    "prompt": "Slot.Validation.1176461591833.889912180853.1372183034960"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "delegationStrategy": "ALWAYS"
+        },
+        "prompts": [
+            {
+                "id": "Slot.Validation.1176461591833.889912180853.1372183034960",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "Beep boop that is incorrect move please view the move list by saying move list."
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "Error that is not a move in the database please try another."
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "Oh no, I am sorry that isn't a move please try another."
+                    }
+                ]
+            }
+        ]
     }
 }

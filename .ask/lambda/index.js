@@ -9,6 +9,7 @@ const mainAPL = require('./documents/main.json');
 const listAPL = require('./documents/powerslist.json');
 const listAPL2 = require('./documents/powerslist2.json');
 const listData = require('./documents/listData.json');
+const listData2 = require('./documents/listData2.json');
 const fightAPL = require('./documents/fighting.json');
 
 const dynamoDbPersistenceAdapter = new DynamoDbPersistenceAdapter({
@@ -160,7 +161,7 @@ const CharactersSelectionScreenHandler = {
         console.log("IN SELECTION ----->>>>" + JSON.stringify(character));
         console.log("THE TOUCH EVENT---->>>" + JSON.stringify(handlerInput.requestEnvelope.request));
           
-          characterSelector(handlerInput,characterRecords,character)
+        await characterSelector(handlerInput,characterRecords,character);
           return CharactersSelectionScreenTwoHandler.handle(handlerInput);
       }
       return handlerInput.responseBuilder
@@ -180,7 +181,7 @@ const CharactersSelectionScreenHandler = {
         .getResponse();
     }
   }
-}
+};
 
 const CharactersSelectionScreenTwoHandler = {
   canHandle(handlerInput) {
@@ -201,7 +202,7 @@ const CharactersSelectionScreenTwoHandler = {
       if (Alexa.getRequestType(handlerInput.requestEnvelope) === 'Alexa.Presentation.APL.UserEvent' && handlerInput.requestEnvelope.request.arguments[0] === 'SecondItemSelected') {
         var character = handlerInput.requestEnvelope.request.arguments[2];
         var characters = sessionAttributes.characterRecords;
-        characterSelector(handlerInput,characters,character)
+        await characterSelector(handlerInput,characters,character);
         return FightStartHandler.handle(handlerInput);
       }
       
@@ -222,7 +223,7 @@ const CharactersSelectionScreenTwoHandler = {
         .getResponse();
     }
   }
-}
+};
 
 const CharacterSelectedHandler = {
   canHandle(handlerInput) {
@@ -232,15 +233,14 @@ const CharacterSelectedHandler = {
   async handle(handlerInput) {
     var character;
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-    console.log("THE ATTRIBUTES ARE ------->>>>" + JSON.stringify(sessionAttributes));
     var characters = sessionAttributes.characterRecords;
     if (!sessionAttributes.playerPower) {
       character = handlerInput.requestEnvelope.request.intent.slots.Characters.value;
-      characterSelector(handlerInput,characters,character);
+      await characterSelector(handlerInput,characters,character);
       return CharactersSelectionScreenTwoHandler.handle(handlerInput);
     } else if (!sessionAttributes.enemyPower) {
       character = handlerInput.requestEnvelope.request.intent.slots.Characters.value;
-      characterSelector(handlerInput,characters,character);
+      await characterSelector(handlerInput,characters,character);
       return FightStartHandler.handle(handlerInput);
     }
   
@@ -258,13 +258,12 @@ const EnemyRandomSelectedHandler = {
     var characters = sessionAttributes.characterRecords;
     var charactersArray = sessionAttributes.charactersArray;
     var randomCharacter = randomNoRepeats(charactersArray);
-    console.log("IN RANDOM ---->>>>>>>>>>" + randomCharacter);
     if (!sessionAttributes.playerPower) {
-      characterSelector(handlerInput,characters,randomCharacter);
+      await characterSelector(handlerInput,characters,randomCharacter);
       sessionAttributes.randomCharacter = randomCharacter;
       return CharactersSelectionScreenTwoHandler.handle(handlerInput);
     } else if (!sessionAttributes.enemyPower) {
-      characterSelector(handlerInput,characters,randomCharacter);
+     await characterSelector(handlerInput,characters,randomCharacter);
       return FightStartHandler.handle(handlerInput);
     }
   }
@@ -277,7 +276,7 @@ const FightStartHandler = {
   },
   async handle(handlerInput) {
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-
+    console.log("IN FIGHT START HANDLER COMPUTER IS----->>>>" + JSON.stringify(sessionAttributes));
     var speakOutput = sessionAttributes.playerPower + ' <phoneme alphabet="ipa" ph="versus">VS</phoneme> ' + sessionAttributes.enemyPower + "! Ready Fight!!";
     if (supportsAPL(handlerInput)) {
       return handlerInput.responseBuilder
@@ -305,10 +304,46 @@ const PlayerFightHandler = {
       Alexa.getIntentName(handlerInput.requestEnvelope) === 'PlayerFightIntent';
   },
   async handle(handlerInput) {
+    var speakOutput;
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-    var move = handlerInput.requestEnvelope.request.intent.slots.Characters.value;
-    
+    var move = handlerInput.requestEnvelope.request.intent.slots.Move.value;
+    console.log("IN PLAYERFIGHTHANDLER AND MOVE IS ---->>>>" + JSON.stringify(move));
+    if(move !== "use power move" || move !== "power move"){
+    fightingPlayer(handlerInput,move);
+    }
+    if(sessionAttributes.playerPowerAttackAvail === true & move === "use power move" || sessionAttributes.playerPowerAttackAvail === true & move === "power move"){
+      usePowerAttack(handlerInput, sessionAttributes.player, "player");
+      speakOutput = "You just used " + sessionAttributes.player.POWER_ATK + " doing  a total of " + sessionAttributes.player.POWER_DMG + " damage to "+sessionAttributes.computer.Name +"! They now have " + sessionAttributes.computersHealth + " points left!";
+      sessionAttributes.playerPowerAttackAvail = false;
+      sessionAttributes.powersAttackTotal = 0;
+    }
+    else if(sessionAttributes.didTheyDodge){
+      speakOutput = sessionAttributes.didTheyDodge;
+      sessionAttributes.playerMoveData.Damage = 0.1;
+    }else if(sessionAttributes.playerPowerAttackAvail === true){
+      speakOutput = "Your " + sessionAttributes.playerMoveData.Name + " did " + sessionAttributes.playerMoveData.Damage + " points of damage to "+sessionAttributes.computer.Name +"! You also have your power move available, to use just say, power move. They now have " + sessionAttributes.computersHealth + " points left!";
+
+    }else{
+      speakOutput = "Your " + sessionAttributes.playerMoveData.Name + " did " + sessionAttributes.playerMoveData.Damage + " points of damage to "+sessionAttributes.computer.Name +"! They now have " + sessionAttributes.computersHealth + " points left!";
+      
+    }
+    if(sessionAttributes.compPowerAttackAvail === false || !sessionAttributes.compPowerAttackAvail){
+      fightingComputer(handlerInput);
+    } 
+    if(sessionAttributes.compPowerAttackAvail === true){
+      usePowerAttack(handlerInput, sessionAttributes.computer, "computer");
+      speakOutput += " Your opponent just activated their power move " + sessionAttributes.computer.POWER_ATK + " and did " + sessionAttributes.computer.POWER_DMG + " points of damage to you! You now have " + sessionAttributes.playersHealth + " points left, keep fighting!";
+      sessionAttributes.compPowerAttackAvail = false;
+      sessionAttributes.powersAttackTotal2 = 0;
+    }else if(sessionAttributes.didTheyDodge){
+      speakOutput += sessionAttributes.didTheyDodge;
+      sessionAttributes.computerMoveData.Damage = 0.1;
+    }else{
+      speakOutput += " Your opponents, " + sessionAttributes.computerMoveData.Name + " did " + sessionAttributes.computerMoveData.Damage + " points of damage to "+ sessionAttributes.player.Name +"! You now have " + sessionAttributes.playersHealth + " points left, keep fighting!";
+    }
+    powersAttackMove(handlerInput);
     if (supportsAPL(handlerInput)) {
+
       return handlerInput.responseBuilder
         .speak(speechPolly(speakOutput))
         .reprompt(speechPolly(speakOutput))
@@ -335,8 +370,13 @@ const ComputerFightHandler = {
   },
   async handle(handlerInput) {
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-
-    var speakOutput = sessionAttributes.playerPower + ' <phoneme alphabet="ipa" ph="versus">VS</phoneme> ' + sessionAttributes.enemyPower + "! Ready Fight!!";
+    var speakOutput;
+    fightingComputer(handlerInput);
+    if(sessionAttributes.didTheyDodge){
+      speakOutput = sessionAttributes.didTheyDodge;
+    }else{
+      speakOutput = "Your opponents " + sessionAttributes.computerMoveData.Name + " did " + sessionAttributes.computerMoveData.Damage + " points of damage to "+sessionAttributes.player.Name +"! You now have " + sessionAttributes.playersHealth + " points left, keep fighting!";
+    }
     if (supportsAPL(handlerInput)) {
       return handlerInput.responseBuilder
         .speak(speechPolly(speakOutput))
@@ -346,14 +386,17 @@ const ComputerFightHandler = {
           version: '1.3',
           document: fightAPL,
           datasources: {}
+        }).addDirective({
+          type: 'Dialog.Delegate',
+          updatedIntent: {
+            name: 'PlayerFightIntent',
+            confirmationStatus: 'NONE',
+            slots: {}
+          }
         })
         .getResponse();
     } else {
-      return handlerInput.responseBuilder
-        .speak(speechPolly(speakOutput))
-        .reprompt(speechPolly(speakOutput))
-        .withSimpleCard("Fight", speakOutput)
-        .getResponse();
+      return PlayerFightHandler.handle(handlerInput);
     }
   }
 };
@@ -644,16 +687,16 @@ saveAttributes = async (handlerInput, attributes) => {
   var attributesManager = handlerInput.attributesManager;
   attributesManager.setPersistentAttributes(attributes);
   await attributesManager.savePersistentAttributes();
-}
+};
 
 getAttributes = async (handlerInput) => {
   var attributesManager = handlerInput.attributesManager;
   var attributes = await attributesManager.getPersistentAttributes() || {};
 
   return attributes;
-}
+};
 
-characterSelector = (handlerInput, characters, character) => {
+characterSelector = async (handlerInput, characters, character) => {
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   if (!sessionAttributes.playerPower) {
     if (!sessionAttributes.hasOwnProperty('player')) {
@@ -661,33 +704,35 @@ characterSelector = (handlerInput, characters, character) => {
     }
     character = characterFilter(character);
     character = CapitalizeTheFirstCharacter(character);
-    sessionAttributes.player = findCharacterInData(characters, character)
+    sessionAttributes.player = findCharacterInData(characters, character);
     sessionAttributes.playerPower = character;
+    sessionAttributes.playersHealth = 200;
   } else if (!sessionAttributes.enemyPower) {
     if (!sessionAttributes.hasOwnProperty('computer')) {
       sessionAttributes.computer = {};
     }
     character = characterFilter(character);
     character = CapitalizeTheFirstCharacter(character);
-    sessionAttributes.computer = findCharacterInData(characters, character)
+    sessionAttributes.computer = findCharacterInData(characters, character);
+    sessionAttributes.computersHealth = 200;
     sessionAttributes.enemyPower = character;
   }
-}
+};
 characterFilter = (character) =>{
     if(character === "mean" || character === "electric")
     {
-      character = "Electric Mean"
-    }else if(character === "lars" || character === "thundersquat" || character === "thunder")
+      character = "Electric Mean";
+    }else if(character === "lars" || character === "thundersquat" || character === "thunder" || character === "Lars")
     {
-      character = "Lars Thundersquat"
-    }else if(character === "ss" || character === "sharpie" || character === "sharp")
+      character = "Lars Thundersquat";
+    }else if(character === "ss" || character === "sharpie" || character === "sharp"|| character === "sharpy")
     {
-      character = "Sharpie Sharp"
+      character = "Sharpie Sharp";
     }else{
       character = character;
     }
     return character;
-}
+};
 findCharacterInData = (characters, character) => {
   for (var i = 0; i < characters.length;) {
     if (characters[i].fields.Name === character) {
@@ -695,61 +740,128 @@ findCharacterInData = (characters, character) => {
     }
     i++;
   }
-}
-findMoveInData = (characters, move) => {
-  for (var i = 0; i < characters.length;) {
-    switch(move){
-      case characters[i].fields.ATK_LT_COMBO === move:
-        var moveStats = {
-          Name: characters[i].fields.ATK_LT_NAME,
-          Damage: characters[i].fields.ATK_LT_DMG,
-          DodgeRating: characters[i].fields.ATK_LT_DBRATING
-        } 
-        return moveStats;
-      break;
+};
+findMoveInData = (player,move) => {
+  var moveStats;
+    if(player.ATK_LT_COMBO === move){
+       moveStats = {
+        Name: player.ATK_LT_NAME,
+        Damage: player.ATK_LT_DMG,
+        DodgeRating: player.ATK_LT_DBRATING
+      }; 
 
-      case characters[i].fields.ATK_LT_COMBO2 === move:
-        var moveStats = {
-          Name: characters[i].fields.ATK_LT_NAME2,
-          Damage: characters[i].fields.ATK_LT_DMG2,
-          DodgeRating: characters[i].fields.ATK_LT_DBRATING2
-        } 
-        return moveStats;
-      break;
-      case characters[i].fields.ATK_HV_COMBO === move:
-        var moveStats = {
-          Name: characters[i].fields.ATK_HV_NAME,
-          Damage: characters[i].fields.ATK_HV_DMG,
-          DodgeRating: characters[i].fields.ATK_HV_DBRATING
-        } 
-        return moveStats;
-      break;
-
-      case characters[i].fields.ATK_HV_COMBO2 === move:
-        var moveStats = {
-          Name: characters[i].fields.ATK_HV_NAME2,
-          Damage: characters[i].fields.ATK_HV_DMG2,
-          DodgeRating: characters[i].fields.ATK_HV_DBRATING2
-        } 
-        return moveStats;
-      break;
-      default:
-        console.log("THAT ISN'T A POWER MOVE")
+      return moveStats;
+    }else if(player.ATK_LT_COMBO2 === move){
+       moveStats = {
+        Name: player.ATK_LT_NAME2,
+        Damage: player.ATK_LT_DMG2,
+        DodgeRating: player.ATK_LT_DBRATING2
+      }; 
+      return moveStats;
+    }else if(player.ATK_HV_COMBO === move){
+       moveStats = {
+        Name: player.ATK_HV_NAME,
+        Damage: player.ATK_HV_DMG,
+        DodgeRating: player.ATK_HV_DBRATING
+      }; 
+      return moveStats;
+    }else if(player.ATK_HV_COMBO2 === move){
+       moveStats = {
+        Name: player.ATK_HV_NAME2,
+        Damage: player.ATK_HV_DMG2,
+        DodgeRating: player.ATK_HV_DBRATING2
+      };
+      return moveStats;
+    }else{
+        console.log("THAT ISN'T A POWER MOVE");
     }
-    i++;
-  }
-}
-fighting = async (handlerInput, move) => {
-  var attributes = getAttributes(handlerInput);
+};
+
+fightingPlayer = (handlerInput, move) => {
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+  if(move === "use power move" ||  move === "power move") return;
   var player = sessionAttributes.player;
+    var moveData = findMoveInData(player,move);
+    console.log("IN FIGHTING PLAYER FUNCTION ---->>>>" + JSON.stringify(moveData));
+    var didTheyDodge = dodgeRating(moveData, player);
+    if(didTheyDodge){
+      sessionAttributes.didTheyDodge = didTheyDodge;
+    }else{
+      sessionAttributes.didTheyDodge = "";
+      health(handlerInput,"player", moveData);
+    }
+    sessionAttributes.playerMoveData = moveData;
+};
+
+fightingComputer = (handlerInput) => {
+  let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   var computer = sessionAttributes.computer;
-  if(sessionAttributes.playersTurn === true){
-    findMoveInData(player, move);
-  }else if(sessionAttributes.computersTurn === true){
-    findMoveInData(computer, move);
+  var compMove = randomizeComputerAttack(computer);
+  var moveData = findMoveInData(computer, compMove);
+  var didTheyDodge = dodgeRating(moveData,computer);
+ if(didTheyDodge){
+    sessionAttributes.didTheyDodge = didTheyDodge;
+  }else{
+    sessionAttributes.didTheyDodge = "";
+  health(handlerInput,"computer", moveData);
   }
+  sessionAttributes.computerMoveData = moveData;
+};
 
+health = (handlerInput,whosTurn,moveData) => {
+  let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+  if(whosTurn === "player"){
+    sessionAttributes.computersHealth -= moveData.Damage;
+  }else if(whosTurn === "computer"){
+    sessionAttributes.playersHealth -= moveData.Damage;
+  }
+};
 
-  saveAttributes(handlerInput, attributes);
-}
+dodgeRating = (moveData, player) => {
+   let theDodgeRating = moveData.DodgeRating;
+   let theCharactersName = player.Name;
+   let randomNumberTen = Math.floor(Math.random() * (5 * 100 - 1 * 100) + 1 * 100) / (1*100);
+   if(theDodgeRating >= randomNumberTen){
+    return theCharactersName +", has blocked your move!";
+   }
+};
+randomizeComputerAttack = (computer) => {
+  let combos = ["ATK_LT_COMBO","ATK_LT_COMBO2","ATK_HV_COMBO","ATK_HV_COMBO2"];
+  var theCombo = randomNoRepeats(combos);
+  if(computer.hasOwnProperty(theCombo)){
+    var theAttack = computer[theCombo];
+    return theAttack;
+  }
+};
+
+powersAttackMove = (handlerInput) => {
+  let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+  var compDamage = sessionAttributes.computerMoveData.Damage;
+  var playerDamage = sessionAttributes.playerMoveData.Damage;
+  var total = ((playerDamage*compDamage)*sessionAttributes.player.POWER_RATIO);
+  sessionAttributes.powersAttackTotal += total;
+  console.log("TOTAL of PLAYERS SPECIAL POWER----->>>>> "+sessionAttributes.powersAttackTotal);
+
+  if(sessionAttributes.player.POWER_TOTAL<=sessionAttributes.powersAttackTotal){
+    sessionAttributes.playerPowerAttackAvail = true;
+    console.log("<<<<<<<PLAYERS POWER ATTACK AVAILABLE!!!!>>>>>>>");
+  }
+  var total2 = ((playerDamage*compDamage) * sessionAttributes.computer.POWER_RATIO);
+  sessionAttributes.powersAttackTotal2 += total2;
+  console.log("TOTAL of COMPUTERS SPECIAL POWER----->>>> "+sessionAttributes.powersAttackTotal2);
+  if(sessionAttributes.computer.POWER_TOTAL<=sessionAttributes.powersAttackTotal2){
+    console.log("<<<<<<<COMPUTERS POWER ATTACK AVAILABLE!!!!>>>>>>>");
+    sessionAttributes.compPowerAttackAvail = true;
+  }
+};
+usePowerAttack = (handlerInput, player, whosTurn) =>{
+  let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+  var damage = player.POWER_DMG;
+  var audio = player.POWER_AUDIO;
+  sessionAttributes.powersAudio = audio;
+  if(whosTurn === "player"){
+    sessionAttributes.computersHealth -= damage;
+  }else if(whosTurn === "computer"){
+    sessionAttributes.playersHealth -= damage;
+  }
+};

@@ -142,15 +142,15 @@
                                     "translateX": "0"
                                 },
                                 {
-                                    "translateY": "-0.5%"
+                                    "translateY": "-0.25%"
                                 }
                             ],
                             "to": [
                                 {
-                                    "translateX": "-1%"
+                                    "translateX": "-0.5%"
                                 },
                                 {
-                                    "translateY": "0.5%"
+                                    "translateY": "0.25%"
                                 }
                             ]
                         }
@@ -164,10 +164,10 @@
                             "property": "transform",
                             "from": [
                                 {
-                                    "translateX": "-1%"
+                                    "translateX": "-0.5%"
                                 },
                                 {
-                                     "translateY": "0.5%"
+                                     "translateY": "0.25%"
                                 }
                             ],
                             "to": [
@@ -175,57 +175,7 @@
                                     "translateX": "0"
                                 },
                                 {
-                                    "translateY": "-0.5%"
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "type": "AnimateItem",
-                    "duration": "${duration * 0.15}",
-                    "value": [
-                        {
-                            "property": "transform",
-                            "from": [
-                                {
-                                    "translateX": "0"
-                                },
-                                {
-                                    "translateY": "-0.5%"
-                                }
-                            ],
-                            "to": [
-                                {
-                                    "translateX": "1%"
-                                },
-                                {
-                                     "translateY": "0.5%"
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "type": "AnimateItem",
-                    "duration": "${duration * 0.15}",
-                    "value": [
-                        {
-                            "property": "transform",
-                            "from": [
-                                {
-                                    "translateX": "1%"
-                                },
-                                {
-                                     "translateY": "0.5%"
-                                }
-                            ],
-                            "to": [
-                                {
-                                    "translateX": "0"
-                                },
-                                {
-                                    "translateY": "-0.5%" 
+                                    "translateY": "-0.25%"
                                 }
                             ]
                         }
@@ -242,15 +192,65 @@
                                     "translateX": "0"
                                 },
                                 {
-                                     "translateY": "-0.5%"
+                                    "translateY": "-0.25%"
                                 }
                             ],
                             "to": [
                                 {
-                                    "translateX": "-1%"
+                                    "translateX": "0.5%"
                                 },
                                 {
-                                     "translateY": "0.5%"
+                                     "translateY": "0.25%"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "AnimateItem",
+                    "duration": "${duration * 0.15}",
+                    "value": [
+                        {
+                            "property": "transform",
+                            "from": [
+                                {
+                                    "translateX": "0.5%"
+                                },
+                                {
+                                     "translateY": "0.25%"
+                                }
+                            ],
+                            "to": [
+                                {
+                                    "translateX": "0"
+                                },
+                                {
+                                    "translateY": "-0.25%" 
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "AnimateItem",
+                    "duration": "${duration * 0.15}",
+                    "value": [
+                        {
+                            "property": "transform",
+                            "from": [
+                                {
+                                    "translateX": "0"
+                                },
+                                {
+                                     "translateY": "-0.25%"
+                                }
+                            ],
+                            "to": [
+                                {
+                                    "translateX": "-0.5%"
+                                },
+                                {
+                                     "translateY": "0.25%"
                                 }
                             ]
                         }
@@ -264,10 +264,10 @@
                             "property": "transform",
                             "from": [
                                 {
-                                    "translateX": "-1%"
+                                    "translateX": "-0.5%"
                                 },
                                 {
-                                    "translateY": "0.5%"
+                                    "translateY": "0.25%"
                                 }
                             ],
                             "to": [
@@ -275,7 +275,7 @@
                                     "translateX": "0%"
                                 },
                                 {
-                                     "translateY": "-0.5%"
+                                     "translateY": "-0.25%"
                             
                                      
                                 }
@@ -294,15 +294,15 @@
                                     "translateX": "0"
                                 },
                                 {
-                                    "translateY": "-0.5%"
+                                    "translateY": "-0.25%"
                                 }
                             ],
                             "to": [
                                 {
-                                    "translateX": "1%"
+                                    "translateX": "0.5%"
                                 },
                                 {
-                                     "translateY": "0.5%"
+                                     "translateY": "0.25%"
                                 }
                             ]
                         }
@@ -316,10 +316,10 @@
                             "property": "transform",
                             "from": [
                                 {
-                                    "translateX": "1%"
+                                    "translateX": "0.5%"
                                 },
                                 {
-                                     "translateY": "0.5%"
+                                     "translateY": "0.25%"
                                 }
                             ],
                             "to": [
@@ -327,7 +327,7 @@
                                     "translateX": "0"
                                 },
                                 {
-                                    "translateY": "-0.5%" 
+                                    "translateY": "-0.25%" 
                                 }
                             ]
                         }
@@ -344,15 +344,15 @@
                                     "translateX": "0"
                                 },
                                 {
-                                     "translateY": "-0.5%"
+                                     "translateY": "-0.25%"
                                 }
                             ],
                             "to": [
                                 {
-                                    "translateX": "-1%"
+                                    "translateX": "-0.5%"
                                 },
                                 {
-                                     "translateY": "0.5%"
+                                     "translateY": "0.25%"
                                 }
                             ]
                         }
@@ -365,10 +365,10 @@
                             "property": "transform",
                             "from": [
                                 {
-                                    "translateX": "-1%"
+                                    "translateX": "-0.5%"
                                 },
                                 {
-                                     "translateY": "0.5%"
+                                     "translateY": "0.25%"
                                 }
                             ],
                             "to": [
@@ -376,7 +376,7 @@
                                     "translateX": "0"
                                 },
                                 {
-                                    "translateY": "-0.5%"
+                                    "translateY": "-0.25%"
                                 }
                             ]
                         }
@@ -393,15 +393,15 @@
                                     "translateX": "0"
                                 },
                                 {
-                                    "translateY": "-0.5%"
+                                    "translateY": "-0.25%"
                                 }
                             ],
                             "to": [
                                 {
-                                    "translateX": "1%"
+                                    "translateX": "0.5%"
                                 },
                                 {
-                                     "translateY": "0.5%"
+                                     "translateY": "0.25%"
                                 }
                             ]
                         }
@@ -415,10 +415,10 @@
                             "property": "transform",
                             "from": [
                                 {
-                                    "translateX": "1%"
+                                    "translateX": "0.5%"
                                 },
                                 {
-                                     "translateY": "0.5%"
+                                     "translateY": "0.25%"
                                 }
                             ],
                             "to": [
@@ -426,57 +426,7 @@
                                     "translateX": "0"
                                 },
                                 {
-                                    "translateY": "-0.5%" 
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "type": "AnimateItem",
-                    "duration": "${duration * 0.15}",
-                    "value": [
-                        {
-                            "property": "transform",
-                            "from": [
-                                {
-                                    "translateX": "0"
-                                },
-                                {
-                                     "translateY": "-0.5%"
-                                }
-                            ],
-                            "to": [
-                                {
-                                    "translateX": "-1%"
-                                },
-                                {
-                                     "translateY": "0.5%"
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "type": "AnimateItem",
-                    "duration": "${duration * 0.15}",
-                    "value": [
-                        {
-                            "property": "transform",
-                            "from": [
-                                {
-                                    "translateX": "-1%"
-                                },
-                                {
-                                     "translateY": "0.5%"
-                                }
-                            ],
-                            "to": [
-                                {
-                                    "translateX": "0"
-                                },
-                                {
-                                    "translateY": "-0.5%"
+                                    "translateY": "-0.25%" 
                                 }
                             ]
                         }
@@ -493,15 +443,15 @@
                                     "translateX": "0"
                                 },
                                 {
-                                    "translateY": "-0.5%"
+                                     "translateY": "-0.25%"
                                 }
                             ],
                             "to": [
                                 {
-                                    "translateX": "1%"
+                                    "translateX": "-0.5%"
                                 },
                                 {
-                                     "translateY": "0.5%"
+                                     "translateY": "0.25%"
                                 }
                             ]
                         }
@@ -515,10 +465,10 @@
                             "property": "transform",
                             "from": [
                                 {
-                                    "translateX": "1%"
+                                    "translateX": "-0.5%"
                                 },
                                 {
-                                     "translateY": "0.5%"
+                                     "translateY": "0.25%"
                                 }
                             ],
                             "to": [
@@ -526,7 +476,7 @@
                                     "translateX": "0"
                                 },
                                 {
-                                    "translateY": "-0.5%" 
+                                    "translateY": "-0.25%"
                                 }
                             ]
                         }
@@ -543,15 +493,65 @@
                                     "translateX": "0"
                                 },
                                 {
-                                     "translateY": "-0.5%"
+                                    "translateY": "-0.25%"
                                 }
                             ],
                             "to": [
                                 {
-                                    "translateX": "-1%"
+                                    "translateX": "0.5%"
                                 },
                                 {
-                                     "translateY": "0.5%"
+                                     "translateY": "0.25%"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "AnimateItem",
+                    "duration": "${duration * 0.15}",
+                    "value": [
+                        {
+                            "property": "transform",
+                            "from": [
+                                {
+                                    "translateX": "0.5%"
+                                },
+                                {
+                                     "translateY": "0.25%"
+                                }
+                            ],
+                            "to": [
+                                {
+                                    "translateX": "0"
+                                },
+                                {
+                                    "translateY": "-0.25%" 
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "AnimateItem",
+                    "duration": "${duration * 0.15}",
+                    "value": [
+                        {
+                            "property": "transform",
+                            "from": [
+                                {
+                                    "translateX": "0"
+                                },
+                                {
+                                     "translateY": "-0.25%"
+                                }
+                            ],
+                            "to": [
+                                {
+                                    "translateX": "-0.5%"
+                                },
+                                {
+                                     "translateY": "0.25%"
                                 }
                             ]
                         }
@@ -565,10 +565,10 @@
                             "property": "transform",
                             "from": [
                                 {
-                                    "translateX": "-1%"
+                                    "translateX": "-0.5%"
                                 },
                                 {
-                                    "translateY": "0.5%"
+                                    "translateY": "0.25%"
                                 }
                             ],
                             "to": [
@@ -576,7 +576,7 @@
                                     "translateX": "0%"
                                 },
                                 {
-                                     "translateY": "-0.5%"
+                                     "translateY": "-0.25%"
                             
                                      
                                 }
@@ -595,15 +595,15 @@
                                     "translateX": "0"
                                 },
                                 {
-                                    "translateY": "-0.5%"
+                                    "translateY": "-0.25%"
                                 }
                             ],
                             "to": [
                                 {
-                                    "translateX": "1%"
+                                    "translateX": "0.5%"
                                 },
                                 {
-                                     "translateY": "0.5%"
+                                     "translateY": "0.25%"
                                 }
                             ]
                         }
@@ -617,10 +617,10 @@
                             "property": "transform",
                             "from": [
                                 {
-                                    "translateX": "1%"
+                                    "translateX": "0.5%"
                                 },
                                 {
-                                     "translateY": "0.5%"
+                                     "translateY": "0.25%"
                                 }
                             ],
                             "to": [
@@ -628,7 +628,7 @@
                                     "translateX": "0"
                                 },
                                 {
-                                    "translateY": "-0.5%" 
+                                    "translateY": "-0.25%" 
                                 }
                             ]
                         }
@@ -645,15 +645,15 @@
                                     "translateX": "0"
                                 },
                                 {
-                                     "translateY": "-0.5%"
+                                     "translateY": "-0.25%"
                                 }
                             ],
                             "to": [
                                 {
-                                    "translateX": "-1%"
+                                    "translateX": "-0.5%"
                                 },
                                 {
-                                     "translateY": "0.5%"
+                                     "translateY": "0.25%"
                                 }
                             ]
                         }
@@ -666,10 +666,10 @@
                             "property": "transform",
                             "from": [
                                 {
-                                    "translateX": "-1%"
+                                    "translateX": "-0.5%"
                                 },
                                 {
-                                     "translateY": "0.5%"
+                                     "translateY": "0.25%"
                                 }
                             ],
                             "to": [
@@ -677,7 +677,7 @@
                                     "translateX": "0"
                                 },
                                 {
-                                    "translateY": "-0.5%"
+                                    "translateY": "-0.25%"
                                 }
                             ]
                         }
@@ -694,15 +694,15 @@
                                     "translateX": "0"
                                 },
                                 {
-                                    "translateY": "-0.5%"
+                                    "translateY": "-0.25%"
                                 }
                             ],
                             "to": [
                                 {
-                                    "translateX": "1%"
+                                    "translateX": "0.5%"
                                 },
                                 {
-                                     "translateY": "0.5%"
+                                     "translateY": "0.25%"
                                 }
                             ]
                         }
@@ -716,10 +716,10 @@
                             "property": "transform",
                             "from": [
                                 {
-                                    "translateX": "1%"
+                                    "translateX": "0.5%"
                                 },
                                 {
-                                     "translateY": "0.5%"
+                                     "translateY": "0.25%"
                                 }
                             ],
                             "to": [
@@ -727,7 +727,7 @@
                                     "translateX": "0"
                                 },
                                 {
-                                    "translateY": "-0.5%" 
+                                    "translateY": "-0.25%" 
                                 }
                             ]
                         }
@@ -744,15 +744,15 @@
                                     "translateX": "0"
                                 },
                                 {
-                                     "translateY": "-0.5%"
+                                     "translateY": "-0.25%"
                                 }
                             ],
                             "to": [
                                 {
-                                    "translateX": "-1%"
+                                    "translateX": "-0.5%"
                                 },
                                 {
-                                     "translateY": "0.5%"
+                                     "translateY": "0.25%"
                                 }
                             ]
                         }
@@ -766,10 +766,10 @@
                             "property": "transform",
                             "from": [
                                 {
-                                    "translateX": "-1%"
+                                    "translateX": "-0.25%"
                                 },
                                 {
-                                    "translateY": "0.5%"
+                                    "translateY": "0.25%"
                                 }
                             ],
                             "to": [
@@ -777,7 +777,7 @@
                                     "translateX": "0%"
                                 },
                                 {
-                                     "translateY": "-0.5%"
+                                     "translateY": "-0.25%"
                             
                                      
                                 }
@@ -796,15 +796,15 @@
                                     "translateX": "0"
                                 },
                                 {
-                                    "translateY": "-0.5%"
+                                    "translateY": "-0.25%"
                                 }
                             ],
                             "to": [
                                 {
-                                    "translateX": "1%"
+                                    "translateX": "0.5%"
                                 },
                                 {
-                                     "translateY": "0.5%"
+                                     "translateY": "0.25%"
                                 }
                             ]
                         }
@@ -818,10 +818,10 @@
                             "property": "transform",
                             "from": [
                                 {
-                                    "translateX": "1%"
+                                    "translateX": "0.5%"
                                 },
                                 {
-                                     "translateY": "0.5%"
+                                     "translateY": "0.25%"
                                 }
                             ],
                             "to": [
@@ -829,7 +829,7 @@
                                     "translateX": "0"
                                 },
                                 {
-                                    "translateY": "-0.5%" 
+                                    "translateY": "-0.25%" 
                                 }
                             ]
                         }
@@ -846,15 +846,15 @@
                                     "translateX": "0"
                                 },
                                 {
-                                     "translateY": "-0.5%"
+                                     "translateY": "-0.25%"
                                 }
                             ],
                             "to": [
                                 {
-                                    "translateX": "-1%"
+                                    "translateX": "-0.5%"
                                 },
                                 {
-                                     "translateY": "0.5%"
+                                     "translateY": "0.25%"
                                 }
                             ]
                         }
@@ -868,10 +868,10 @@
                             "property": "transform",
                             "from": [
                                 {
-                                    "translateX": "-1%"
+                                    "translateX": "-0.5%"
                                 },
                                 {
-                                    "translateY": "0.5%"
+                                    "translateY": "0.25%"
                                 }
                             ],
                             "to": [
