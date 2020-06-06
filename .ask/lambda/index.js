@@ -1,17 +1,19 @@
 /*jshint esversion: 8 */
 const Alexa = require('ask-sdk-core');
-const https = require('https');
-const fs = require('fs');
+var EloRating = require('elo-rating');
 const {
   DynamoDbPersistenceAdapter
 } = require('ask-sdk-dynamodb-persistence-adapter');
+
 const mainAPL = require('./documents/main.json');
 const listAPL = require('./documents/powerslist.json');
 const listAPL2 = require('./documents/powerslist2.json');
 const listData = require('./documents/listData.json');
 const listData2 = require('./documents/listData2.json');
 const fightAPL = require('./documents/fighting.json');
-
+const fightStartAPL = require('./documents/fightingStart.json');
+const moveListAPL = require('./documents/fightingList.json');
+const helpers = require('./helpers');
 const dynamoDbPersistenceAdapter = new DynamoDbPersistenceAdapter({
   tableName: 'powers'
 });
@@ -34,15 +36,18 @@ const LaunchRequestHandler = {
     var bgImage = await getRandomMainBGImage();
 
     if (Object.keys(attributes).length === 0) {
-      speakOutput = '<break strength="strong"/><p>Welcome, to <phoneme alphabet="ipa" ph="pɑwɚrs">Powers</phoneme>. I am  <say-as interpret-as="spell-out">G34XY</say-as>, a <phoneme alphabet="ipa" ph="pɑwɚrs">Powers</phoneme> fighter helper. </p><p>I am here to help you in any way possible through out any fight you may ask for my help by saying <break strength="strong"/> help me <say-as interpret-as="spell-out">G3</say-as> <break strength="strong"/>or I need help <say-as interpret-as="spell-out">G34XY</say-as> <break strength="strong"/>or hey bot I need help.</p> I will try to help in any way possible.<break strength="strong"/><amazon:emotion name="excited" intensity="high"> Except, I cannot fight for you!!</amazon:emotion> That is not in my contract you hear me <break strength="strong"/><emphasis level="strong">I do not fight!</emphasis>  Let\'s start by getting your name, we use this to keep track of your stats and how you are doing on the leaderboard. Just say, my name is.';
+      speakOutput = '<break strength="strong"/><p>Welcome, to <phoneme alphabet="ipa" ph="pɑwɚrs">Powers</phoneme>. I am  <say-as interpret-as="spell-out">G34XY</say-as>, a <phoneme alphabet="ipa" ph="pɑwɚrs">Powers</phoneme> fighter helper. </p><p>I am here to help you in any way possible through out any fight you may ask for my help by saying <break strength="strong"/> move list <break strength="strong"/>or bot help.</p> I will try to help in any way possible.<break strength="strong"/><amazon:emotion name="excited" intensity="high"> Except, I cannot fight for you!!</amazon:emotion> That is not in my contract you hear me <break strength="strong"/><emphasis level="strong">I do not fight!</emphasis>  Let\'s start by getting your name, we use this to keep track of your stats and how you are doing on the leaderboard. Just say, my name is.';
     } else {
-      speakOutput = '<p>Welcome back to Powers, ' + CapitalizeTheFirstCharacter(name) + '. </p> <p>Would you like to view your ranking or pick your character to fight?</p>';
+      var launch2 = ['<p>Welcome back to Powers, ' + helpers.CapitalizeTheFirstCharacter(name) + '. </p> <p>Would you like to view your rankings or pick your character to fight?</p>',
+          '<p>Hey you came back!</p> <p>This is great news.</p> <p>What would you like to do fight or look at your rankings?</p>',
+        '<p>Welcome back! You know, I am not the only bot here, there is another that helps me out from time to time, her name is <say-as interpret-as="spell-out">A73XA</say-as>.</p> <p>Now would you like to fight again or view your rankings?</p> '];
+      speakOutput = helpers.randomNoRepeats(launch2);
     }
 
-    if (supportsAPL(handlerInput)) {
+    if (helpers.supportsAPL(handlerInput)) {
       return handlerInput.responseBuilder
-        .speak(speechPolly(speakOutput))
-        .reprompt(speechPolly(speakOutput))
+        .speak(helpers.speechPolly(speakOutput))
+        .reprompt(helpers.speechPolly(speakOutput))
         .addDirective({
           type: 'Alexa.Presentation.APL.RenderDocument',
           version: '1.3',
@@ -61,8 +66,8 @@ const LaunchRequestHandler = {
         .getResponse();
     } else {
       return handlerInput.responseBuilder
-        .speak(speechPolly(speakOutput))
-        .reprompt(speechPolly(speakOutput))
+        .speak(helpers.speechPolly(speakOutput))
+        .reprompt(helpers.speechPolly(speakOutput))
         .withSimpleCard("Powers", speakOutput)
         .getResponse();
     }
@@ -114,11 +119,15 @@ const NameIntentHandler = {
       attributes.name = userName;
       attributes.nameid = userName + usersID;
       await saveAttributes(handlerInput, attributes);
-      const speakOutput = 'Perfect, ' + CapitalizeTheFirstCharacter(userName) + ", now lets pick your character.";
+      var nameSpeak = ['Perfect, ' + helpers.CapitalizeTheFirstCharacter(userName) + ", now lets pick your character, just say pick character.",
+                      'Outstanding, I have saved your name for rankings and to be more personible. Now lets pick your character, '+ helpers.CapitalizeTheFirstCharacter(userName) +'. Just say; pick character.',
+                    'Well hello there, '+ helpers.CapitalizeTheFirstCharacter(userName) +'! It is nice to meet you. Next, you got to pick a character you can do that by saying, pick character.'];
+      const speakOutput = helpers.randomNoRepeats(nameSpeak);
+      
 
       return handlerInput.responseBuilder
-        .speak(speechPolly(speakOutput))
-        .reprompt(speechPolly(speakOutput))
+        .speak(helpers.speechPolly(speakOutput))
+        .reprompt(helpers.speechPolly(speakOutput))
         .getResponse();
     }
   }
@@ -134,9 +143,10 @@ const CharactersSelectionScreenHandler = {
   },
   async handle(handlerInput) {
     var theBase = "appoBlEf8I1VQdU3r";
-    var characterdata = await httpGet(theBase, '', 'Characters');
+    var characterdata = await helpers.httpGet(theBase, '', 'Characters');
     var characterRecords = characterdata.records;
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    var attributes = getAttributes(handlerInput);
     if (!sessionAttributes.hasOwnProperty('characterRecords')) {
       sessionAttributes.characterRecords = [];
     }
@@ -150,33 +160,39 @@ const CharactersSelectionScreenHandler = {
     if (charactersArray.length > 2) {
       charactersArray = charactersArray.slice(1).join(', <break strength="strong"/>').replace(/, ([^,]*)$/, ' or $1');
     }
-    var speakOutput = "Alright, lets go " + sessionAttributes.playerPower + "! Now who do you want to fight, " + sessionAttributes.charactersArray;
+    var whoToFight = ["Alright, lets go " + sessionAttributes.playerPower + "! Now who do you want to fight, " + sessionAttributes.charactersArray,
+                      "Are you serious, " +sessionAttributes.playerPower + " my favorite! Who would you like to fight, " + sessionAttributes.charactersArray + "?",
+                      "Everyone, we got "+sessionAttributes.playerPower + " in the house! Who are they going to fight against"+ sessionAttributes.charactersArray+"?",];
+    var speakOutput = helpers.randomNoRepeats(whoToFight);
     if (!sessionAttributes.playerPower) {
       speakOutput = "You can pick from any of these characters: " + charactersArray + '!';
     }
 
-    if (supportsAPL(handlerInput)) {
+    if (helpers.supportsAPL(handlerInput)) {
+      var characterData;
+      if(attributes.firstExpansion === true){
+        characterData = listData2;
+      }else{
+        characterData = listData;
+      }
       if (Alexa.getRequestType(handlerInput.requestEnvelope) === 'Alexa.Presentation.APL.UserEvent' && handlerInput.requestEnvelope.request.arguments[0] === 'ItemSelected') {
-        var character = handlerInput.requestEnvelope.request.arguments[2];
-        console.log("IN SELECTION ----->>>>" + JSON.stringify(character));
-        console.log("THE TOUCH EVENT---->>>" + JSON.stringify(handlerInput.requestEnvelope.request));
-          
+        var character = handlerInput.requestEnvelope.request.arguments[2];  
         await characterSelector(handlerInput,characterRecords,character);
           return CharactersSelectionScreenTwoHandler.handle(handlerInput);
       }
       return handlerInput.responseBuilder
-        .speak(speechPolly(speakOutput))
-        .reprompt(speechPolly(speakOutput))
+        .speak(helpers.speechPolly(speakOutput))
+        .reprompt(helpers.speechPolly(speakOutput))
         .addDirective({
           type: 'Alexa.Presentation.APL.RenderDocument',
           version: '1.3',
           document: listAPL,
-          datasources: listData
+          datasources: characterData
         })
         .getResponse();
     } else {
       return handlerInput.responseBuilder
-        .speak(speechPolly(speakOutput))
+        .speak(helpers.speechPolly(speakOutput))
         .reprompt()
         .getResponse();
     }
@@ -193,12 +209,21 @@ const CharactersSelectionScreenTwoHandler = {
   },
   async handle(handlerInput) {
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-    var speakOutput = "Alright, lets go " + sessionAttributes.playerPower + "! Now who do you want to fight, " + sessionAttributes.charactersArray;
+    var attributes = getAttributes(handlerInput);
+    var whoToFight = ["Alright, lets go " + sessionAttributes.playerPower + "! Now who do you want to fight, " + sessionAttributes.charactersArray,
+    "Are you serious, " +sessionAttributes.playerPower + " my favorite! Who would you like to fight, " + sessionAttributes.charactersArray + "?",
+    "Everyone, we got "+sessionAttributes.playerPower + " in the house! Who are they going to fight against"+ sessionAttributes.charactersArray+"?",];
+var speakOutput = helpers.randomNoRepeats(whoToFight);
     if (!sessionAttributes.playerPower) {
       speakOutput = "You can pick from any of these characters: " + charactersArray + '!';
     }
 
-    if (supportsAPL(handlerInput)) {
+    if (helpers.supportsAPL(handlerInput)) {
+      if(attributes.firstExpansion === true){
+        characterData = listData2;
+      }else{
+        characterData = listData;
+      }
       if (Alexa.getRequestType(handlerInput.requestEnvelope) === 'Alexa.Presentation.APL.UserEvent' && handlerInput.requestEnvelope.request.arguments[0] === 'SecondItemSelected') {
         var character = handlerInput.requestEnvelope.request.arguments[2];
         var characters = sessionAttributes.characterRecords;
@@ -207,18 +232,18 @@ const CharactersSelectionScreenTwoHandler = {
       }
       
       return handlerInput.responseBuilder
-        .speak(speechPolly(speakOutput))
-        .reprompt(speechPolly(speakOutput))
+        .speak(helpers.speechPolly(speakOutput))
+        .reprompt(helpers.speechPolly(speakOutput))
         .addDirective({
           type: 'Alexa.Presentation.APL.RenderDocument',
           version: '1.3',
           document: listAPL2,
-          datasources: listData
+          datasources: characterData
         })
         .getResponse();
     } else {
       return handlerInput.responseBuilder
-        .speak(speechPolly(speakOutput))
+        .speak(helpers.speechPolly(speakOutput))
         .reprompt()
         .getResponse();
     }
@@ -257,7 +282,7 @@ const EnemyRandomSelectedHandler = {
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     var characters = sessionAttributes.characterRecords;
     var charactersArray = sessionAttributes.charactersArray;
-    var randomCharacter = randomNoRepeats(charactersArray);
+    var randomCharacter = helpers.randomNoRepeats(charactersArray);
     if (!sessionAttributes.playerPower) {
       await characterSelector(handlerInput,characters,randomCharacter);
       sessionAttributes.randomCharacter = randomCharacter;
@@ -277,22 +302,44 @@ const FightStartHandler = {
   async handle(handlerInput) {
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     console.log("IN FIGHT START HANDLER COMPUTER IS----->>>>" + JSON.stringify(sessionAttributes));
-    var speakOutput = sessionAttributes.playerPower + ' <phoneme alphabet="ipa" ph="versus">VS</phoneme> ' + sessionAttributes.enemyPower + "! Ready Fight!!";
-    if (supportsAPL(handlerInput)) {
+    var speakOutput;
+    if(!sessionAttributes.hasOwnProperty("FightStart")){
+       speakOutput = "Ok, now just say a move, or say move list, to access it. "+sessionAttributes.playerPower + ' <phoneme alphabet="ipa" ph="versus">VS</phoneme> ' + sessionAttributes.enemyPower + "! Ready Fight!!";
+        sessionAttributes.FightStart = true;
+      }else {
+        var fightReturn = ["Let's get back to the fight, just say a move.",
+                            "Sweet you have returned, just say a move to get back to fighting!",
+                          "So someone told me, to tell you, to just say a move to fight.",
+                          "Light attack or Heavy attack are universal fight moves you can start with those if you don't remember a fight move."];
+      speakOutput = helpers.randomNoRepeats(fightReturn);
+
+    }
+    
+    if (helpers.supportsAPL(handlerInput)) {
       return handlerInput.responseBuilder
-        .speak(speechPolly(speakOutput))
-        .reprompt(speechPolly(speakOutput))
+        .speak(helpers.speechPolly(speakOutput))
+        .reprompt(helpers.speechPolly(speakOutput))
         .addDirective({
           type: 'Alexa.Presentation.APL.RenderDocument',
           version: '1.3',
-          document: fightAPL,
-          datasources: {}
+          document: fightStartAPL,
+          datasources: {
+            "mainData": {
+            "type": "object",
+            "properties": {
+              "playerName":sessionAttributes.player.Name,
+              "computerName": sessionAttributes.computer.Name,
+              "powerPlayer":sessionAttributes.player.PWR_IMG,
+              "powerComputer":sessionAttributes.computer.PWR_IMG
+              }
+            }
+          }
         })
         .getResponse();
     } else {
       return handlerInput.responseBuilder
-        .speak(speechPolly(speakOutput))
-        .reprompt(speechPolly(speakOutput))
+        .speak(helpers.speechPolly(speakOutput))
+        .reprompt(helpers.speechPolly(speakOutput))
         .withSimpleCard("Fight", speakOutput)
         .getResponse();
     }
@@ -304,117 +351,283 @@ const PlayerFightHandler = {
       Alexa.getIntentName(handlerInput.requestEnvelope) === 'PlayerFightIntent';
   },
   async handle(handlerInput) {
-    var speakOutput;
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    var speakOutput;
+    var audio;
     var move = handlerInput.requestEnvelope.request.intent.slots.Move.value;
     console.log("IN PLAYERFIGHTHANDLER AND MOVE IS ---->>>>" + JSON.stringify(move));
-    if(move !== "use power move" || move !== "power move"){
-    fightingPlayer(handlerInput,move);
-    }
-    if(sessionAttributes.playerPowerAttackAvail === true & move === "use power move" || sessionAttributes.playerPowerAttackAvail === true & move === "power move"){
-      usePowerAttack(handlerInput, sessionAttributes.player, "player");
-      speakOutput = "You just used " + sessionAttributes.player.POWER_ATK + " doing  a total of " + sessionAttributes.player.POWER_DMG + " damage to "+sessionAttributes.computer.Name +"! They now have " + sessionAttributes.computersHealth + " points left!";
-      sessionAttributes.playerPowerAttackAvail = false;
-      sessionAttributes.powersAttackTotal = 0;
-    }
-    else if(sessionAttributes.didTheyDodge){
-      speakOutput = sessionAttributes.didTheyDodge;
-      sessionAttributes.playerMoveData.Damage = 0.1;
-    }else if(sessionAttributes.playerPowerAttackAvail === true){
-      speakOutput = "Your " + sessionAttributes.playerMoveData.Name + " did " + sessionAttributes.playerMoveData.Damage + " points of damage to "+sessionAttributes.computer.Name +"! You also have your power move available, to use just say, power move. They now have " + sessionAttributes.computersHealth + " points left!";
-
+    
+    if(move === "dodge" || move === "block"|| move === "dip"|| move === "duck"|| move === "dive"|| move === "blocked"){
+      speakOutput = playerBlocked(handlerInput, move);
     }else{
-      speakOutput = "Your " + sessionAttributes.playerMoveData.Name + " did " + sessionAttributes.playerMoveData.Damage + " points of damage to "+sessionAttributes.computer.Name +"! They now have " + sessionAttributes.computersHealth + " points left!";
-      
+      if(move !== "use power move" || move !== "power move"){
+        fightingPlayer(handlerInput,move);
+        }
+        if(sessionAttributes.playerPowerAttackAvail === true & move === "use power move" || sessionAttributes.playerPowerAttackAvail === true & move === "power move"){
+          usePowerAttack(handlerInput, sessionAttributes.player, "player");
+          audio = sessionAttributes.player.POWER_AUDIO;
+          if(sessionAttributes.player.Name === "Charity"){
+            speakOutput = audio +"You just used " + sessionAttributes.player.POWER_ATK + " healing yourself for " + sessionAttributes.player.POWER_DMG + " points! You now have " + sessionAttributes.playersHealth + " points!";
+          }else{
+            speakOutput = audio +"You just used " + sessionAttributes.player.POWER_ATK + " doing  a total of " + sessionAttributes.player.POWER_DMG + " damage to "+sessionAttributes.computer.Name +"! They now have " + sessionAttributes.computersHealth + " points left!";
+          }
+          sessionAttributes.playerPowerAttackAvail = false;
+          sessionAttributes.powersAttackTotal = 0;
+        }
+        else if(sessionAttributes.didCompDodge){
+          speakOutput = sessionAttributes.computer.Name + " blocked your move.";
+          sessionAttributes.didCompDodge = false;
+        }else if(sessionAttributes.playerPowerAttackAvail === true){
+          speakOutput = "Your " + sessionAttributes.playerMoveData.Name + " did " + sessionAttributes.playerMoveData.Damage + " points of damage to "+sessionAttributes.computer.Name +"! You also have your power move available, to use just say, power move. They now have " + sessionAttributes.computersHealth + " points left!";
+    
+        }else{
+          speakOutput = "Your " + sessionAttributes.playerMoveData.Name + " did " + sessionAttributes.playerMoveData.Damage + " points of damage to "+sessionAttributes.computer.Name +"! They now have " + sessionAttributes.computersHealth + " points left!";
+          
+        }
+        
+        if(sessionAttributes.compPowerAttackAvail === true){
+          usePowerAttack(handlerInput, sessionAttributes.computer, "computer");
+          audio = sessionAttributes.computer.POWER_AUDIO;
+          if(sessionAttributes.computer.Name === "Charity"){
+            speakOutput += audio +" Your opponent just used " + sessionAttributes.computer.POWER_ATK + " healing herself for " + sessionAttributes.player.POWER_DMG + " points! They now have " + sessionAttributes.computersHealth + " points!";
+          }else{
+          speakOutput += audio + " Your opponent just activated their power move " + sessionAttributes.computer.POWER_ATK + " and did " + sessionAttributes.computer.POWER_DMG + " points of damage to you! You now have " + sessionAttributes.playersHealth + " points left, keep fighting!";
+          }
+          sessionAttributes.compPowerAttackAvail = false;
+          sessionAttributes.powersAttackTotal2 = 0;
+        }else if(sessionAttributes.didPlayerDodge){
+          speakOutput += " "+sessionAttributes.player.Name +", has blocked the move!";
+          sessionAttributes.didPlayerDodge = false;
+        }else{
+          speakOutput += " Your opponents, " + sessionAttributes.computerMoveData.Name + " did " + sessionAttributes.computerMoveData.Damage + " points of damage to "+ sessionAttributes.player.Name +"! You now have " + sessionAttributes.playersHealth + " points left, keep fighting!";
+        }
     }
-    if(sessionAttributes.compPowerAttackAvail === false || !sessionAttributes.compPowerAttackAvail){
-      fightingComputer(handlerInput);
-    } 
-    if(sessionAttributes.compPowerAttackAvail === true){
-      usePowerAttack(handlerInput, sessionAttributes.computer, "computer");
-      speakOutput += " Your opponent just activated their power move " + sessionAttributes.computer.POWER_ATK + " and did " + sessionAttributes.computer.POWER_DMG + " points of damage to you! You now have " + sessionAttributes.playersHealth + " points left, keep fighting!";
-      sessionAttributes.compPowerAttackAvail = false;
-      sessionAttributes.powersAttackTotal2 = 0;
-    }else if(sessionAttributes.didTheyDodge){
-      speakOutput += sessionAttributes.didTheyDodge;
-      sessionAttributes.computerMoveData.Damage = 0.1;
-    }else{
-      speakOutput += " Your opponents, " + sessionAttributes.computerMoveData.Name + " did " + sessionAttributes.computerMoveData.Damage + " points of damage to "+ sessionAttributes.player.Name +"! You now have " + sessionAttributes.playersHealth + " points left, keep fighting!";
+    sessionAttributes.turnCounter += 1;
+    if(sessionAttributes.playersHealth < 0 || sessionAttributes.computersHealth < 0) {
+      theEnd(handlerInput);
+      return FightEndHandler.handle(handlerInput);
     }
-    powersAttackMove(handlerInput);
-    if (supportsAPL(handlerInput)) {
-
+    if (helpers.supportsAPL(handlerInput)) {
+      healthBar(handlerInput);
       return handlerInput.responseBuilder
-        .speak(speechPolly(speakOutput))
-        .reprompt(speechPolly(speakOutput))
+        .speak(helpers.speechPolly(speakOutput))
+        .reprompt(helpers.speechPolly(speakOutput))
         .addDirective({
           type: 'Alexa.Presentation.APL.RenderDocument',
           version: '1.3',
           document: fightAPL,
-          datasources: {}
+          datasources: {
+            "mainData": {
+              "type": "object",
+              "properties": {
+                "powerPlayer":sessionAttributes.player.PWR_IMG,
+                "powerComputer":sessionAttributes.computer.PWR_IMG,
+                "power":{
+                  "health": sessionAttributes.playersBarOne,
+                  "health2":sessionAttributes.playersBarTwo
+                },
+                "power2": {
+                  "health": sessionAttributes.computersBarOne,
+                  "health2":sessionAttributes.computersBarTwo
+                }
+              }
+            }
+          }
         })
         .getResponse();
     } else {
       return handlerInput.responseBuilder
-        .speak(speechPolly(speakOutput))
-        .reprompt(speechPolly(speakOutput))
+        .speak(helpers.speechPolly(speakOutput))
+        .reprompt(helpers.speechPolly(speakOutput))
         .withSimpleCard("Fight", speakOutput)
         .getResponse();
     }
   }
 };
-const ComputerFightHandler = {
-  canHandle(handlerInput) {
-    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
-      Alexa.getIntentName(handlerInput.requestEnvelope) === 'ComputerFightIntent';
-  },
-  async handle(handlerInput) {
-    let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-    var speakOutput;
-    fightingComputer(handlerInput);
-    if(sessionAttributes.didTheyDodge){
-      speakOutput = sessionAttributes.didTheyDodge;
-    }else{
-      speakOutput = "Your opponents " + sessionAttributes.computerMoveData.Name + " did " + sessionAttributes.computerMoveData.Damage + " points of damage to "+sessionAttributes.player.Name +"! You now have " + sessionAttributes.playersHealth + " points left, keep fighting!";
-    }
-    if (supportsAPL(handlerInput)) {
-      return handlerInput.responseBuilder
-        .speak(speechPolly(speakOutput))
-        .reprompt(speechPolly(speakOutput))
-        .addDirective({
-          type: 'Alexa.Presentation.APL.RenderDocument',
-          version: '1.3',
-          document: fightAPL,
-          datasources: {}
-        }).addDirective({
-          type: 'Dialog.Delegate',
-          updatedIntent: {
-            name: 'PlayerFightIntent',
-            confirmationStatus: 'NONE',
-            slots: {}
-          }
-        })
-        .getResponse();
-    } else {
-      return PlayerFightHandler.handle(handlerInput);
-    }
-  }
-};
+
 const FightEndHandler = {
   canHandle(handlerInput) {
     return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
       Alexa.getIntentName(handlerInput.requestEnvelope) === 'CharacterSelectedIntent';
   },
-  handle(handlerInput) {
-
-
-    var speakOutput = "Ready Fight";
+  async handle(handlerInput) {
+    var speakOutput;
+    var color;
+    var bgColor;
+    let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    if(sessionAttributes.computerWin === false && sessionAttributes.playerWin === false){
+      speakOutput = "Wow it was a tie you will get them next time!";
+      bgColor= "#eeeeee";
+      color = "#0E2773";
+    }else if (sessionAttributes.playerWin === false){
+      speakOutput = "Sorry but you lost always next time!";
+      bgColor= "#BF1736";
+      color = "#0E2773";
+    }else if(sessionAttributes.computerWin === false){
+      speakOutput = "Nice you won!";
+      bgColor= "#0E2773";
+      color = "#BF1736";
+    }
+    if (helpers.supportsAPL(handlerInput)) {
+      healthBar(handlerInput);
+      return handlerInput.responseBuilder
+        .speak(helpers.speechPolly(speakOutput))
+        .reprompt(helpers.speechPolly(speakOutput))
+        .addDirective({
+          type: 'Alexa.Presentation.APL.RenderDocument',
+          version: '1.3',
+          document: fightAPL,
+          datasources: {
+            "mainData": {
+              "type": "object",
+              "properties": {
+                "bgColor":bgColor,
+                "color":color,
+                "message":speakOutput
+              }
+            }
+          }
+        })
+        .getResponse();
+    } else {
     return handlerInput.responseBuilder
-      .speak(speechPolly(speakOutput))
+      .speak(helpers.speechPolly(speakOutput))
+      .reprompt()
+      .getResponse();
+    }
+  }
+};
+
+const MoveListHandler = {
+  canHandle(handlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === 'MoveListIntent';
+  },
+  async handle(handlerInput) {
+    var speakOutput = moveListSpeak(handlerInput);
+    let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    
+    if (helpers.supportsAPL(handlerInput)) {
+      return handlerInput.responseBuilder
+        .speak(helpers.speechPolly(speakOutput))
+        .reprompt(helpers.speechPolly(speakOutput))
+        .addDirective({
+          type: 'Alexa.Presentation.APL.RenderDocument',
+          version: '1.3',
+          document: moveListAPL,
+          datasources: {
+            "mainData": {
+              "type": "object",
+              "properties": {
+                "powerPlayer":sessionAttributes.player.PWR_IMG,
+                "powerComputer":sessionAttributes.computer.PWR_IMG,
+                "powerName": sessionAttributes.player.Name,
+                "moveList": moveList(handlerInput)
+
+              }
+            }
+          }
+        })
+        .getResponse();
+    } else {
+    return handlerInput.responseBuilder
+      .speak(helpers.speechPolly(speakOutput))
       .reprompt()
       .getResponse();
   }
+}
 };
+
+const YourStatsHandler = {
+  canHandle(handlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === 'YourStatsIntent';
+  },
+  async handle(handlerInput) {
+    var speakOutput = "";
+    let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    
+    if (helpers.supportsAPL(handlerInput)) {
+      return handlerInput.responseBuilder
+        .speak(helpers.speechPolly(speakOutput))
+        .reprompt(helpers.speechPolly(speakOutput))
+        .addDirective({
+          type: 'Alexa.Presentation.APL.RenderDocument',
+          version: '1.3',
+          document: moveListAPL,
+          datasources: {
+            "mainData": {
+              "type": "object",
+              "properties": {
+                "powerPlayer":sessionAttributes.player.PWR_IMG,
+                "powerComputer":sessionAttributes.computer.PWR_IMG,
+                "powerName": sessionAttributes.player.Name,
+                "moveList": moveList(handlerInput)
+
+              }
+            }
+          }
+        })
+        .getResponse();
+    } else {
+    return handlerInput.responseBuilder
+      .speak(helpers.speechPolly(speakOutput))
+      .reprompt()
+      .getResponse();
+  }
+}
+};
+
+const YourStandingsHandler = {
+  canHandle(handlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === 'YourStandingsIntent';
+  },
+  async handle(handlerInput) {
+    var speakOutput = "";
+    let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    
+    if (helpers.supportsAPL(handlerInput)) {
+      return handlerInput.responseBuilder
+        .speak(helpers.speechPolly(speakOutput))
+        .reprompt(helpers.speechPolly(speakOutput))
+        .addDirective({
+          type: 'Alexa.Presentation.APL.RenderDocument',
+          version: '1.3',
+          document: moveListAPL,
+          datasources: {
+            "mainData": {
+              "type": "object",
+              "properties": {
+                "powerPlayer":sessionAttributes.player.PWR_IMG,
+                "powerComputer":sessionAttributes.computer.PWR_IMG,
+                "powerName": sessionAttributes.player.Name,
+                "moveList": moveList(handlerInput)
+
+              }
+            }
+          }
+        })
+        .getResponse();
+    } else {
+    return handlerInput.responseBuilder
+      .speak(helpers.speechPolly(speakOutput))
+      .reprompt()
+      .getResponse();
+  }
+}
+};
+
+const CloseMoveListHandler = {
+  canHandle(handlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === 'CloseMoveListIntent';
+  },
+  handle(handlerInput) {
+    return FightStartHandler.handle(handlerInput);
+  }
+};
+
 const HelpIntentHandler = {
   canHandle(handlerInput) {
     return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
@@ -442,6 +655,80 @@ const CancelAndStopIntentHandler = {
       .getResponse();
   }
 };
+
+
+const YesNoIntentHandler = {
+  canHandle(handlerInput) {
+      return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+          && ((Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent') ||
+             (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent'));
+  },
+  async handle(handlerInput) {
+    var attributes = getAttributes(handlerInput);
+      console.log("<=== YESNO HANDLER ===>");
+      const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+      switch(sessionAttributes.previousIntent) {
+          case "HintIntent":
+              if (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent') return CharactersSelectionScreenHandler.handle(handlerInput);
+              else {
+                attributes.firstExpansion = true;
+                  return CharactersSelectionScreenHandler.handle(handlerInput);
+              }
+          break;
+          default:
+              return ErrorHandler.handle(handlerInput);
+          break;
+      }
+  }
+};
+
+const ExpansionIntentHandler = {
+  canHandle(handlerInput) {
+      return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+          && Alexa.getIntentName(handlerInput.requestEnvelope) === 'ExpansionIntent';
+  },
+  async handle(handlerInput) {
+      console.log("<=== HINTINTENT HANDLER ===>");
+      const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+      var attributes = getAttributes(handlerInput);
+      sessionAttributes.previousIntent = sessionAttributes.currentIntent;
+      sessionAttributes.currentIntent = "HintIntent";
+      var speakOutput = "";
+
+    if (!attributes.hasOwnProperty(firstExpansion)){
+
+          const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
+          const locale = handlerInput.requestEnvelope.request.locale;
+          
+          return await ms.getInSkillProducts(locale).then(async function checkForProductAccess(result) {
+              const expansion = result.inSkillProducts.find(record => record.referenceName === "ExpansionPack1");
+                         
+                  var upsellMessage = "You have not purchased the first expansion pack, would you like to buy it?";
+
+                  return handlerInput.responseBuilder
+                      .addDirective({
+                          "type": "Connections.SendRequest",
+                          "name": "Upsell",
+                          "payload": {
+                              "InSkillProduct": {
+                                  "productId": expansion.productId
+                              },
+                              "upsellMessage": upsellMessage
+                          },
+                          "token": "correlationToken"
+                      })
+                      .getResponse();
+          });
+        }else{
+          speakOutput = "I am sorry you alreay purchased the first expansion, please wait for use to make another.";
+      return handlerInput.responseBuilder
+          .speak(speakOutput)
+          .reprompt(speakOutput)
+          .getResponse();
+    }
+  }
+};
+
 const SessionEndedRequestHandler = {
   canHandle(handlerInput) {
     return Alexa.getRequestType(handlerInput.requestEnvelope) === 'SessionEndedRequest';
@@ -452,10 +739,7 @@ const SessionEndedRequestHandler = {
   }
 };
 
-// The intent reflector is used for interaction model testing and debugging.
-// It will simply repeat the intent the user said. You can create custom handlers
-// for your intents by defining them above, then also adding them to the request
-// handler chain below.
+
 const IntentReflectorHandler = {
   canHandle(handlerInput) {
     return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest';
@@ -466,14 +750,11 @@ const IntentReflectorHandler = {
 
     return handlerInput.responseBuilder
       .speak(speakOutput)
-      //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
       .getResponse();
   }
 };
 
-// Generic error handling to capture any syntax or routing errors. If you receive an error
-// stating the request handler chain is not found, you have not implemented a handler for
-// the intent being invoked or included it in the skill builder below.
+
 const ErrorHandler = {
   canHandle() {
     return true;
@@ -499,16 +780,11 @@ const DialogManagementStateInterceptor = {
       const attributesManager = handlerInput.attributesManager;
       const sessionAttributes = attributesManager.getSessionAttributes();
 
-      // If there are no session attributes we've never entered dialog management
-      // for this intent before.
-
       if (sessionAttributes[currentIntent.name]) {
         let savedSlots = sessionAttributes[currentIntent.name].slots;
 
         for (let key in savedSlots) {
-          // we let the current intent's values override the session attributes
-          // that way the user can override previously given values.
-          // this includes anything we have previously stored in their profile.
+
           if (!currentIntent.slots[key].value && savedSlots[key].value) {
             currentIntent.slots[key] = savedSlots[key];
           }
@@ -519,9 +795,7 @@ const DialogManagementStateInterceptor = {
     }
   }
 };
-// The SkillBuilder acts as the entry point for your skill, routing all request and response
-// payloads to the handlers above. Make sure any new handlers or interceptors you've
-// defined are included below. The order matters - they're processed top to bottom.
+
 exports.handler = Alexa.SkillBuilders.custom()
   .addRequestHandlers(
     LaunchRequestHandler,
@@ -532,12 +806,17 @@ exports.handler = Alexa.SkillBuilders.custom()
     EnemyRandomSelectedHandler,
     FightStartHandler,
     PlayerFightHandler,
-    ComputerFightHandler,
     FightEndHandler,
+    MoveListHandler,
+    CloseMoveListHandler,
+    YourStatsHandler,
+    YourStandingsHandler,
+    YesNoIntentHandler,
+    ExpansionIntentHandler,
     HelpIntentHandler,
     CancelAndStopIntentHandler,
     SessionEndedRequestHandler,
-    IntentReflectorHandler, // make sure IntentReflectorHandler is last so it doesn't override your custom intent handlers
+    IntentReflectorHandler, 
   )
   .addErrorHandlers(ErrorHandler)
   .withPersistenceAdapter(dynamoDbPersistenceAdapter)
@@ -546,113 +825,14 @@ exports.handler = Alexa.SkillBuilders.custom()
   .lambda();
 
 
-function getSlotValues(filledSlots) {
-  const slotValues = {};
 
-  console.log(`The filled slots: ${JSON.stringify(filledSlots)}`);
-  Object.keys(filledSlots).forEach((item) => {
-    const name = filledSlots[item].name;
-
-    if (filledSlots[item] &&
-      filledSlots[item].resolutions &&
-      filledSlots[item].resolutions.resolutionsPerAuthority[0] &&
-      filledSlots[item].resolutions.resolutionsPerAuthority[0].status &&
-      filledSlots[item].resolutions.resolutionsPerAuthority[0].status.code) {
-      switch (filledSlots[item].resolutions.resolutionsPerAuthority[0].status.code) {
-        case 'ER_SUCCESS_MATCH':
-          slotValues[name] = {
-            synonym: filledSlots[item].value,
-            resolved: filledSlots[item].resolutions.resolutionsPerAuthority[0].values[0].value.name,
-            isValidated: true,
-          };
-          break;
-        case 'ER_SUCCESS_NO_MATCH':
-          slotValues[name] = {
-            synonym: filledSlots[item].value,
-            resolved: filledSlots[item].value,
-            isValidated: false,
-          };
-          break;
-        default:
-          break;
-      }
-    } else {
-      slotValues[name] = {
-        synonym: filledSlots[item].value,
-        resolved: filledSlots[item].value,
-        isValidated: false,
-      };
-    }
-  }, this);
-
-  return slotValues;
-}
-
-
-httpGet = (base, filter, table) => {
-  var options = {
-    host: "api.airtable.com",
-    port: 443,
-    path: "/v0/" + base + "/" + table + "?api_key=" + variables.ApiAirtable + filter,
-    method: "GET"
-  };
-  //console.log("FULL PATH = http://" + options.host + options.path);
-  return new Promise(((resolve, reject) => {
-    const request = https.request(options, (response) => {
-      response.setEncoding("utf8");
-      let returnData = "";
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        return reject(new Error(`${response.statusCode}: ${response.req.getHeader("host")} ${response.req.path}`));
-      }
-      response.on("data", (chunk) => {
-        returnData += chunk;
-      });
-      response.on("end", () => {
-        resolve(JSON.parse(returnData));
-      });
-      response.on("error", (error) => {
-        reject(error);
-      });
-    });
-    request.end();
-  }));
-};
-
-CapitalizeTheFirstCharacter = (word) => {
-  var newWord = word.charAt(0).toUpperCase() + word.substring(1);
-
-  return newWord;
-
-};
-speechPolly = (text) => {
-  return '<speak><voice name="Russell"><prosody pitch="low">' + text + '</prosody></voice></speak>';
-};
-
-function supportsAPL(handlerInput) {
-  if (handlerInput.requestEnvelope.context.System &&
-    handlerInput.requestEnvelope.context.System.device &&
-    handlerInput.requestEnvelope.context.System.device.supportedInterfaces &&
-    handlerInput.requestEnvelope.context.System.device.supportedInterfaces["Alexa.Presentation.APL"]) return true;
-  return false;
-}
-
-function randomNoRepeats(array) {
-  var copy = array.slice(0);
-  if (copy.length < 1) {
-    copy = array.slice(0);
-  }
-  var index = Math.floor(Math.random() * copy.length);
-  var item = copy[index];
-  copy.splice(index, 1);
-  return item;
-}
 getRandomMainBGImage = async () => {
   var bgMainImage = ["https://powers.s3.amazonaws.com/empty-street-between-brick-buildings-4183230.jpg",
     "https://powers.s3.amazonaws.com/photo-of-pathway-between-walls-1472234.jpg",
     "https://powers.s3.amazonaws.com/street-urban-japan-brasil-50859+(1).jpg",
     "https://powers.s3.amazonaws.com/arches-architecture-art-baroque-316080.jpg"
   ];
-  var randomBackground = await randomNoRepeats(bgMainImage);
+  var randomBackground = await helpers.randomNoRepeats(bgMainImage);
   return randomBackground;
 };
 getRandomPowerBGImage = async () => {
@@ -667,19 +847,19 @@ getRandomPowerBGImage = async () => {
     "https://powers.s3.amazonaws.com/samy-saadi-fFC7IOFT-OM-unsplash.jpg",
     "https://powers.s3.amazonaws.com/steven-pahel-7IOcBt29C2w-unsplash.jpg"
   ];
-  var randomBackground = await randomNoRepeats(bgMainImage);
+  var randomBackground = await helpers.randomNoRepeats(bgMainImage);
   return randomBackground;
 };
 getRandomPowerImage = async () => {
   var theBase = "appoBlEf8I1VQdU3r";
-  var characterdata = await httpGet(theBase, '', 'Characters');
+  var characterdata = await helpers.httpGet(theBase, '', 'Characters');
   var characterRecords = characterdata.records;
   var charactersArray = [];
   for (var i = 0; i < characterRecords.length;) {
     charactersArray.push(characterRecords[i].fields.PWR_IMG);
     i++;
   }
-  var powersImage = await randomNoRepeats(charactersArray);
+  var powersImage = await helpers.randomNoRepeats(charactersArray);
   return powersImage;
 };
 
@@ -698,12 +878,25 @@ getAttributes = async (handlerInput) => {
 
 characterSelector = async (handlerInput, characters, character) => {
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+  let attributes = getAttributes(handlerInput);
   if (!sessionAttributes.playerPower) {
     if (!sessionAttributes.hasOwnProperty('player')) {
       sessionAttributes.player = {};
     }
     character = characterFilter(character);
-    character = CapitalizeTheFirstCharacter(character);
+    character = helpers.CapitalizeTheFirstCharacter(character);
+    if(!attributes.hasOwnProperty(characters)){
+      attributes.characters = {};
+    }
+    if(!attributes.characters.hasOwnProperty(character)){
+      attributes.characters[character] = {};
+    }
+    attributes.characters[character].count += 1;  
+    if(attributes.characters[character].count === 1){
+      attributes.characters[character].score = 100;
+    }
+
+    saveAttributes(handlerInput,attributes);
     sessionAttributes.player = findCharacterInData(characters, character);
     sessionAttributes.playerPower = character;
     sessionAttributes.playersHealth = 200;
@@ -712,7 +905,19 @@ characterSelector = async (handlerInput, characters, character) => {
       sessionAttributes.computer = {};
     }
     character = characterFilter(character);
-    character = CapitalizeTheFirstCharacter(character);
+    character = helpers.CapitalizeTheFirstCharacter(character);
+    
+    if(!attributes.hasOwnProperty(compCharacters)){
+      attributes.compCharacters = {};
+    }
+    if(!attributes.compCharacters.hasOwnProperty(character)){
+      attributes.compCharacters[character] = {};
+    }
+    attributes.compCharacters[character].count += 1;  
+    if(attributes.compCharacters[character].count === 1){
+      attributes.compCharacters[character].score = 100;
+    }
+
     sessionAttributes.computer = findCharacterInData(characters, character);
     sessionAttributes.computersHealth = 200;
     sessionAttributes.enemyPower = character;
@@ -772,7 +977,14 @@ findMoveInData = (player,move) => {
         DodgeRating: player.ATK_HV_DBRATING2
       };
       return moveStats;
-    }else{
+    }else if(player.ATK_BLK_COMBO === move){
+      moveStats = {
+       Name: player.ATK_BLK_NAME,
+       Damage: player.ATK_BLK_DMG,
+       DodgeRating: player.ATK_BLK_DBRATING
+     };
+     return moveStats;
+   }else{
         console.log("THAT ISN'T A POWER MOVE");
     }
 };
@@ -783,14 +995,21 @@ fightingPlayer = (handlerInput, move) => {
   var player = sessionAttributes.player;
     var moveData = findMoveInData(player,move);
     console.log("IN FIGHTING PLAYER FUNCTION ---->>>>" + JSON.stringify(moveData));
-    var didTheyDodge = dodgeRating(moveData, player);
+    var didTheyDodge = dodgeRating(moveData);
     if(didTheyDodge){
-      sessionAttributes.didTheyDodge = didTheyDodge;
+      sessionAttributes.didCompDodge = didTheyDodge;
     }else{
-      sessionAttributes.didTheyDodge = "";
+      sessionAttributes.didCompDodge = false;
       health(handlerInput,"player", moveData);
     }
     sessionAttributes.playerMoveData = moveData;
+    
+    if(sessionAttributes.compPowerAttackAvail === false || !sessionAttributes.compPowerAttackAvail){
+      fightingComputer(handlerInput);
+      powersAttackMove(handlerInput, "player");
+    } else return;
+    
+    
 };
 
 fightingComputer = (handlerInput) => {
@@ -798,70 +1017,198 @@ fightingComputer = (handlerInput) => {
   var computer = sessionAttributes.computer;
   var compMove = randomizeComputerAttack(computer);
   var moveData = findMoveInData(computer, compMove);
-  var didTheyDodge = dodgeRating(moveData,computer);
+  var didTheyDodge = dodgeCompRating(moveData);
  if(didTheyDodge){
-    sessionAttributes.didTheyDodge = didTheyDodge;
+    sessionAttributes.didPlayerDodge = didTheyDodge;
   }else{
-    sessionAttributes.didTheyDodge = "";
+    sessionAttributes.didPlayerDodge = false;
   health(handlerInput,"computer", moveData);
   }
   sessionAttributes.computerMoveData = moveData;
+  powersAttackMove(handlerInput, "computer");
 };
 
+playerBlocked = (handlerInput,move) => {
+  if(move === "blocked" || move === "dodge" || move === "duck" || move === "dip"|| move === "dive"){
+    move = "block";
+  }
+  let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+  var compMove = randomizeComputerAttack(sessionAttributes.computer);
+  var moveCompData = findMoveInData(sessionAttributes.computer, compMove);
+  var moveData = findMoveInData(sessionAttributes.player, move);
+  let theDodgeRating = moveData.DodgeRating;
+  let randomNumberTen = Math.floor(Math.random() * (5 * 100 - 1 * 100) + 1 * 100) / (1*100);
+  var blockDamage = moveData.Damage;
+  var damageTook = (moveCompData.Damage - (moveCompData.Damage * 0.85));
+  sessionAttributes.computersHealth -= blockDamage;
+  sessionAttributes.playersHealth -= damageTook.toFixed();
+  if(theDodgeRating >= randomNumberTen){
+    return "You activated, " + moveData.Name + " since you blocked their attack you did " + blockDamage + " points of damage, but you still took " + damageTook.toFixed() + " points of damage. Keep Fighting!";
+   }
+};
 health = (handlerInput,whosTurn,moveData) => {
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   if(whosTurn === "player"){
-    sessionAttributes.computersHealth -= moveData.Damage;
+    sessionAttributes.computersHealth = ( parseInt(sessionAttributes.computersHealth) -  parseInt(moveData.Damage));
   }else if(whosTurn === "computer"){
-    sessionAttributes.playersHealth -= moveData.Damage;
+    sessionAttributes.playersHealth = ( parseInt(sessionAttributes.playersHealth) -  parseInt(moveData.Damage));
   }
+  
 };
 
-dodgeRating = (moveData, player) => {
+dodgeRating = (moveData) => {
    let theDodgeRating = moveData.DodgeRating;
-   let theCharactersName = player.Name;
    let randomNumberTen = Math.floor(Math.random() * (5 * 100 - 1 * 100) + 1 * 100) / (1*100);
+   console.log("THE DODGE RATING IS>>> " + theDodgeRating + " THE RANDOM NUMBER IS >>> "+randomNumberTen);
    if(theDodgeRating >= randomNumberTen){
-    return theCharactersName +", has blocked your move!";
-   }
+    return true;
+   }else return false;
 };
+dodgeCompRating = (moveData) => {
+  let theDodgeRating = moveData.DodgeRating;
+  let randomNumberTen = Math.floor(Math.random() * (5 * 100 - 1 * 100) + 1 * 100) / (1*100);
+  console.log("THE DODGE RATING IS>>> " + theDodgeRating + " THE RANDOM NUMBER IS >>> "+randomNumberTen);
+  if(theDodgeRating >= randomNumberTen){
+   return true;
+  }else return false;
+};
+
 randomizeComputerAttack = (computer) => {
   let combos = ["ATK_LT_COMBO","ATK_LT_COMBO2","ATK_HV_COMBO","ATK_HV_COMBO2"];
-  var theCombo = randomNoRepeats(combos);
+  var theCombo = helpers.randomNoRepeats(combos);
   if(computer.hasOwnProperty(theCombo)){
     var theAttack = computer[theCombo];
     return theAttack;
   }
 };
 
-powersAttackMove = (handlerInput) => {
+powersAttackMove = (handlerInput, whosTurn) => {
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   var compDamage = sessionAttributes.computerMoveData.Damage;
   var playerDamage = sessionAttributes.playerMoveData.Damage;
-  var total = ((playerDamage*compDamage)*sessionAttributes.player.POWER_RATIO);
+  var total = (((compDamage * 0.5)*playerDamage)*sessionAttributes.player.POWER_RATIO);
   sessionAttributes.powersAttackTotal += total;
-  console.log("TOTAL of PLAYERS SPECIAL POWER----->>>>> "+sessionAttributes.powersAttackTotal);
 
   if(sessionAttributes.player.POWER_TOTAL<=sessionAttributes.powersAttackTotal){
     sessionAttributes.playerPowerAttackAvail = true;
-    console.log("<<<<<<<PLAYERS POWER ATTACK AVAILABLE!!!!>>>>>>>");
   }
-  var total2 = ((playerDamage*compDamage) * sessionAttributes.computer.POWER_RATIO);
+  var total2 = (((playerDamage * 0.5)*compDamage) * sessionAttributes.computer.POWER_RATIO);
   sessionAttributes.powersAttackTotal2 += total2;
-  console.log("TOTAL of COMPUTERS SPECIAL POWER----->>>> "+sessionAttributes.powersAttackTotal2);
-  if(sessionAttributes.computer.POWER_TOTAL<=sessionAttributes.powersAttackTotal2){
-    console.log("<<<<<<<COMPUTERS POWER ATTACK AVAILABLE!!!!>>>>>>>");
+  if(sessionAttributes.computer.POWER_TOTAL<=sessionAttributes.powersAttackTotal2 && whosTurn === "computer"){
     sessionAttributes.compPowerAttackAvail = true;
   }
 };
 usePowerAttack = (handlerInput, player, whosTurn) =>{
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   var damage = player.POWER_DMG;
-  var audio = player.POWER_AUDIO;
-  sessionAttributes.powersAudio = audio;
   if(whosTurn === "player"){
-    sessionAttributes.computersHealth -= damage;
+    if(player.Name === "Charity"){
+      sessionAttributes.playersHealth = ( parseInt(sessionAttributes.playersHealth) +  parseInt(damage));
+    }else{
+      sessionAttributes.computersHealth = ( parseInt(sessionAttributes.computersHealth) -  parseInt(damage));
+    }
+    
   }else if(whosTurn === "computer"){
-    sessionAttributes.playersHealth -= damage;
+    if(player.Name === "Charity"){
+      sessionAttributes.computersHealth = (parseInt(sessionAttributes.computersHealth) + parseInt(damage));
+    }else{
+      sessionAttributes.playersHealth = ( parseInt(sessionAttributes.playersHealth) -  parseInt(damage));
+    }
   }
+  
+};
+
+healthBar = (handlerInput) => {
+  let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+  if(sessionAttributes.playersHealth > 100){
+    var barOne = sessionAttributes.playersHealth - 100;
+    sessionAttributes.playersBarOne = barOne +"%";
+    sessionAttributes.playersBarTwo = "100%";
+  }else{
+    sessionAttributes.playersBarOne = "0%";
+    var barTwo = sessionAttributes.playersHealth;
+    sessionAttributes.playersBarTwo = barTwo + "%";
+  }
+  if(sessionAttributes.computersHealth > 100){
+    var barCompOne = sessionAttributes.computersHealth - 100;
+    sessionAttributes.computersBarOne = barCompOne + "%";
+    sessionAttributes.computersBarTwo = "100%";
+  }else{
+    sessionAttributes.computersBarOne = "0%";
+    var barCompTwo = sessionAttributes.computersHealth;
+    sessionAttributes.computersBarTwo = barCompTwo +"%";
+  }
+};
+
+theEnd = (handlerInput) => {
+  let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+  
+  if(sessionAttributes.computersHealth < 0 && sessionAttributes.playersHealth < 0){
+    sessionAttributes.playerWin = false;
+    sessionAttributes.computerWin = false;
+  }else if(sessionAttributes.computersHealth < 0){
+    sessionAttributes.computerWin = false;
+  }else if(sessionAttributes.playersHealth < 0){
+    sessionAttributes.playerWin = false;
+  }
+};
+
+moveList = (handlerInput) => {
+  let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+  let ltName = sessionAttributes.player.ATK_LT_NAME;
+  let ltCombo = sessionAttributes.player.ATK_LT_COMBO;
+  let ltName2 = sessionAttributes.player.ATK_LT_NAME2;
+  let ltCombo2 = sessionAttributes.player.ATK_LT_COMBO2;
+  let hvName = sessionAttributes.player.ATK_HV_NAME;
+  let hvCombo = sessionAttributes.player.ATK_HV_COMBO;
+  let hvName2 = sessionAttributes.player.ATK_HV_NAME2;
+  let hvCombo2 = sessionAttributes.player.ATK_HV_COMBO2;
+  var theList = `<b>${ltName}</b>: ${ltCombo} <br><b>${ltName2}</b>: ${ltCombo2} <br><b>${hvName}</b>: ${hvCombo} <br><b>${hvName2}</b>: ${hvCombo2}`;
+  return theList;
+};
+moveListSpeak = (handlerInput) => {
+  let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+  let ltName = sessionAttributes.player.ATK_LT_NAME;
+  let ltCombo = sessionAttributes.player.ATK_LT_COMBO;
+  let ltName2 = sessionAttributes.player.ATK_LT_NAME2;
+  let ltCombo2 = sessionAttributes.player.ATK_LT_COMBO2;
+  let hvName = sessionAttributes.player.ATK_HV_NAME;
+  let hvCombo = sessionAttributes.player.ATK_HV_COMBO;
+  let hvName2 = sessionAttributes.player.ATK_HV_NAME2;
+  let hvCombo2 = sessionAttributes.player.ATK_HV_COMBO2;
+  var theList = `The move list for ${sessionAttributes.player.Name} is the following: ${ltName}:<break strength="strong"/> ${ltCombo}; ${ltName2}:<break strength="strong"/> ${ltCombo2}; ${hvName}:<break strength="strong"/> ${hvCombo}; ${hvName2}:<break strength="strong"/> ${hvCombo2}.`;
+  return theList;
+};
+
+calculateStats = (handlerInput) =>{
+  const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+  var attributes = getAttributes(handlerInput);
+  let playerCharacter = sessionAttributes.player.Name;
+  let compCharacter = sessionAttributes.computer.Name;
+  let stats = {
+    "turns":sessionAttributes.turnCounter,
+    "playerCharName":playerCharacter,
+    "computerCharName":compCharacter,
+    "playerPlayingCharacterCount":attributes.characters[playerCharacter].count,
+    "computerCharacterCount":attributes.compCharacters[compCharacter].count,
+    "rankingScore":attributes.characters[playerCharacter].score,
+    "compRankingScore":attributes.compCharacters[compCharacter].score
+
+  };
+  attributes.stats = stats;
+  saveAttributes(handlerInput, attributes);
+};
+
+getStandings = async (handlerInput) => {
+  const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+  let computer = sessionAttributes.computer;
+  let player = sessionAttributes.player;
+  var attributes = getAttributes(handlerInput);
+  let playerScore = attributes.stats.rankingScore;
+  let compScore = attributes.stats.compRankingScore;
+  let playerWin = sessionAttributes.playerWin;
+  var result = EloRating.calculate(playerScore, compScore, playerWin);
+  console.log(result.playerRating); 
+  console.log(result.opponentRating);
+  saveAttributes(handlerInput, attributes);
 };

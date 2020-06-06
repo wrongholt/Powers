@@ -138,7 +138,36 @@
     },
     "onMount": [],
     "graphics": {},
-    "commands": {},
+    "commands": {
+        "slideInRight": {
+        "parameters": [
+            "duration",
+            "distance",
+            "delay"
+        ],
+        "commands": [
+            {
+                "type": "AnimateItem",
+                "duration": "${duration}",
+                "delay": "${delay || 0}",
+                "value": [
+                    {
+                        "property": "transform",
+                        "from": [
+                            {
+                                "translateX": "${distance || '-300%'}"
+                            }
+                        ],
+                        "to": [
+                            {
+                                "translateX": 0
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }},
     "layouts": {
         "FullHorizontalListItem": {
             "parameters": [
@@ -327,6 +356,12 @@
                             "item": [
                                 {
                                     "type": "HorizontalListItem"
+                                }
+                            ],"onMount": [
+                                {
+                                    "type": "slideInRight",
+                                    "duration": 2000,
+                                    "delay":3000
                                 }
                             ]
                         }

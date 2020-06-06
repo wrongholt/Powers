@@ -81,6 +81,59 @@
                     ]
                 },
                 {
+                    "name": "MoveListIntent",
+                    "slots": [],
+                    "samples": [
+                        "Open move list",
+                        "move list",
+                        "bot help"
+                    ]
+                },
+                {
+                    "name": "CloseMoveListIntent",
+                    "slots": [],
+                    "samples": [
+                        "close move list",
+                        "exit move list",
+                        "bot bye"
+                    ]
+                },
+                {
+                    "name": "YourStatsIntent",
+                    "slots": [],
+                    "samples": [
+                        "statistics",
+                        "stats",
+                        "my stats",
+                        "my statistics",
+                        "see my stats",
+                        "view my stats"
+                    ]
+                },
+                {
+                    "name": "YourStandingsIntent",
+                    "slots": [],
+                    "samples": [
+                        "standings",
+                        "leaderboard",
+                        "my standings",
+                        "the leaderboard",
+                        "view leaderboard"
+                    ]
+                },
+                {
+                    "name": "ExpansionIntent",
+                    "slots": [],
+                    "samples": [
+                        "expansion",
+                        "purchase expansion",
+                        "get the expansion",
+                        "get expansion",
+                        "more characters",
+                        "buy the expansion"
+                    ]
+                },
+                {
                     "name": "RandomCharacterSelectedIntent",
                     "slots": [],
                     "samples": [
@@ -206,14 +259,24 @@
                     "values": [
                         {
                             "name": {
-                                "value": "power move",
-                                "synonyms": []
+                                "value": "block",
+                                "synonyms": [
+                                    "blocked",
+                                    "duck",
+                                    "dodge",
+                                    "dip",
+                                    "dive"
+                                ]
                             }
                         },
                         {
                             "name": {
-                                "value": "use power move",
-                                "synonyms": []
+                                "value": "power move"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "use power move"
                             }
                         },
                         {

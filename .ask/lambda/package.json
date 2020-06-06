@@ -14,6 +14,7 @@
     "ask-sdk-dynamodb-persistence-adapter": "^2.8.0",
     "ask-sdk-model": "^1.18.0",
     "aws-sdk": "^2.326.0",
+    "elo-rating": "^1.0.1",
     "https": "^1.0.0"
   }
 }
