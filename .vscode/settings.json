@@ -1,0 +1,29 @@
+{
+  "serverlessConsole.services": [
+    {
+      "type": "dynamodb",
+      "title": "powers",
+      "tableName": "powers",
+      "awsProfile": "default",
+      "region": "us-east-1"
+    },
+    {
+      "type": "custom",
+      "title": "Powers",
+      "timeOffsetInMs": 0,
+      "awsProfile": "default",
+      "items": [
+        {
+          "tabs": [
+            {
+              "logs": "/aws/lambda/ask-powers-default-default-1589308796931",
+              "region": "us-east-1",
+              "title": "dev"
+            }
+          ],
+          "title": "/aws/lambda/ask-powers-default-default-1589308796931"
+        }
+      ]
+    }
+  ]
+}

@@ -140,34 +140,57 @@
     "graphics": {},
     "commands": {
         "slideInRight": {
-        "parameters": [
-            "duration",
-            "distance",
-            "delay"
-        ],
-        "commands": [
-            {
-                "type": "AnimateItem",
-                "duration": "${duration}",
-                "delay": "${delay || 0}",
-                "value": [
-                    {
-                        "property": "transform",
-                        "from": [
-                            {
-                                "translateX": "${distance || '-300%'}"
-                            }
-                        ],
-                        "to": [
-                            {
-                                "translateX": 0
-                            }
-                        ]
-                    }
-                ]
-            }
-        ]
-    }},
+            "parameters": [
+                "duration",
+                "distance",
+                "delay"
+            ],
+            "commands": [
+                {
+                    "type": "AnimateItem",
+                    "duration": "${duration}",
+                    "delay": "${delay || 0}",
+                    "value": [
+                          {
+                            "property": "transform",
+                            "from": [
+                                {
+                                    "translateX": 0
+                                }
+                            ],
+                            "to": [
+                                {
+                                    "translateX": "${distance && ('-' + distance) || '-1500'}"
+                                }
+                            ]
+                        }
+                    
+                    ]
+                },
+                {
+                    "type": "AnimateItem",
+                    "duration": "${duration}",
+                    "delay": "${delay || 0}",
+                    "value": [
+                          {
+                            "property": "transform",
+                            "from": [
+                                {
+                                    "translateX": "${distance && ('-' + distance) || '-1500'}"
+                                }
+                            ],
+                            "to": [
+                                {
+                                    "translateX": 0
+                                }
+                            ]
+                        }
+                    
+                    ]
+                }
+            ]
+        }
+    },
     "layouts": {
         "FullHorizontalListItem": {
             "parameters": [
@@ -203,6 +226,11 @@
                         },
                         {
                             "type": "Text",
+                            "text": "Level ${data.textContent.thirdText.text || '1'} ",
+                            "style": "textStyleDetails"
+                        },
+                        {
+                            "type": "Text",
                             "text": "${ordinal} | ${listLength}",
                             "paddingBottom": "20dp",
                             "color": "white",
@@ -220,7 +248,7 @@
                     "minWidth": 312,
                     "paddingLeft": 16,
                     "paddingRight": 16,
-                    "height": "100%",
+                    "height": "100vh",
                     "items": [
                         {
                             "type": "Container",
@@ -259,6 +287,11 @@
                             "text": "${data.textContent.secondaryText.text}",
                             "style": "textStyleDetails",
                             "spacing": 4
+                        },
+                        {
+                            "type": "Text",
+                            "text": "Level ${data.textContent.thirdText.text || '1'} ",
+                            "style": "textStyleDetails"
                         }
                     ]
                 }
@@ -287,7 +320,7 @@
                             "overlayColor": "rgba(0, 0, 0, 0.6)",
                             "source": "${backgroundImage}",
                             "scale": "best-fill"
-                        }, 
+                        },
                         {
                             "type": "Sequence",
                             "scrollDirection": "horizontal",
@@ -297,22 +330,24 @@
                             "numbered": true,
                             "item": {
                                 "type": "TouchWrapper",
-                                "onPress": {
-                                  "type": "SendEvent",
-                                  "arguments": [
-                                    "ItemSelected",
-                                    "${ordinal}",
-                                    "${data.textContent.primaryText.text}"
-                                  ]
-                                },
-                            "item": [
-                                {
-                                    "type": "FullHorizontalListItem",
-                                    "listLength": "${payload.listTemplate2ListData.listPage.listItems.length}"
-                                }
-                            ]
+                                "onPress": [
+                                    {
+                                        "type": "SendEvent",
+                                        "arguments": [
+                                            "ItemSelected",
+                                            "${ordinal}",
+                                            "${data.textContent.primaryText.text}"
+                                        ]
+                                    }
+                                ],
+                                "item": [
+                                    {
+                                        "type": "FullHorizontalListItem",
+                                        "listLength": "${payload.listTemplate2ListData.listPage.listItems.length}"
+                                    }
+                                ]
+                            }
                         }
-                    }
                     ]
                 },
                 {
@@ -345,26 +380,29 @@
                             "numbered": true,
                             "item": {
                                 "type": "TouchWrapper",
-                                "onPress": {
-                                  "type": "SendEvent",
-                                  "arguments": [
-                                    "ItemSelected",
-                                    "${ordinal}",
-                                    "${data.textContent.primaryText.text}"
-                                  ]
-                                },
-                            "item": [
-                                {
-                                    "type": "HorizontalListItem"
-                                }
-                            ],"onMount": [
-                                {
-                                    "type": "slideInRight",
-                                    "duration": 2000,
-                                    "delay":3000
-                                }
-                            ]
-                        }
+                                "onPress": [
+                                    {
+                                        "type": "SendEvent",
+                                        "arguments": [
+                                            "ItemSelected",
+                                            "${ordinal}",
+                                            "${data.textContent.primaryText.text}"
+                                        ]
+                                    }
+                                ],
+                                "item": [
+                                    {
+                                        "type": "HorizontalListItem"
+                                    }
+                                ],
+                                "onMount": [
+                                    {
+                                        "type": "slideInRight",
+                                        "duration": 8000,
+                                        "delay": 500
+                                    }
+                                ]
+                            }
                         },
                         {
                             "type": "AlexaFooter",

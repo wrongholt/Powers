@@ -27,7 +27,7 @@
     "listTemplate2ListData": {
         "type": "list",
         "listId": "lt2Sample",
-        "totalNumberOfItems": 10,
+        "totalNumberOfItems": 9,
         "hintText": "Tap on your character or Say their name.",
         "listPage": {
             "listItems": [

@@ -12,6 +12,14 @@
                     "samples": []
                 },
                 {
+                    "name": "AMAZON.YesIntent",
+                    "samples": []
+                  },
+                  {
+                    "name": "AMAZON.NoIntent",
+                    "samples": []
+                  },
+                {
                     "name": "AMAZON.StopIntent",
                     "samples": []
                 },
@@ -122,17 +130,32 @@
                     ]
                 },
                 {
-                    "name": "ExpansionIntent",
-                    "slots": [],
+                    "name": "WhatCanIBuyIntent",
                     "samples": [
-                        "expansion",
-                        "purchase expansion",
-                        "get the expansion",
-                        "get expansion",
-                        "more characters",
-                        "buy the expansion"
+                      "what can I buy",
+                      "what can I shop for",
+                      "tell me what I can buy",
+                      "buy",
+                      "shop",
+                      "purchase"        
+                    ],
+                    "slots": []
+                  },    
+                  {
+                    "name": "BuyIntent",
+                    "samples": [
+                      "buy {ProductName}",
+                      "purchase {ProductName}",
+                      "want {ProductName}",
+                      "would like {ProductName}"
+                    ],
+                    "slots": [
+                      {
+                        "name": "ProductName",
+                        "type": "LIST_OF_PRODUCT_NAMES"
+                      }
                     ]
-                },
+                  },            
                 {
                     "name": "RandomCharacterSelectedIntent",
                     "slots": [],
@@ -158,6 +181,21 @@
                 }
             ],
             "types": [
+                {
+                    "name": "LIST_OF_PRODUCT_NAMES",
+                    "values": [
+                      {
+                        "name": {
+                          "value": "Expansion one",
+                          "synonyms": [
+                            "expansion",
+                            "first expansion",
+                            "more characters"
+                          ]
+                        }
+                      }
+                    ]
+                  },
                 {
                     "name": "CharacterSlots",
                     "values": [

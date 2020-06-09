@@ -9,7 +9,7 @@ const mainAPL = require('./documents/main.json');
 const listAPL = require('./documents/powerslist.json');
 const listAPL2 = require('./documents/powerslist2.json');
 const listData = require('./documents/listData.json');
-const listData2 = require('./documents/listData2.json');
+const listData2 = require('./documents/expansionOne.json');
 const fightAPL = require('./documents/fighting.json');
 const fightStartAPL = require('./documents/fightingStart.json');
 const moveListAPL = require('./documents/fightingList.json');
@@ -29,7 +29,22 @@ const LaunchRequestHandler = {
   },
   async handle(handlerInput) {
     var speakOutput = "";
+    var theBase = "appoBlEf8I1VQdU3r";
+    var characterdata = await helpers.httpGet(theBase, '', 'Characters');
+    var characterRecords = characterdata.records;
+    let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     var attributes = await getAttributes(handlerInput);
+    if (!sessionAttributes.hasOwnProperty('characterRecords')) {
+      sessionAttributes.characterRecords = [];
+    }
+    sessionAttributes.characterRecords = characterRecords;
+    var charactersArray = [];
+    for (var i = 0; i < characterRecords.length;) {
+      charactersArray.push(characterRecords[i].fields.Name);
+      i++;
+    }
+    sessionAttributes.charactersArray = charactersArray;
+
     var name = attributes.name;
     var power1 = await getRandomPowerImage();
     var power2 = await getRandomPowerImage();
@@ -73,6 +88,7 @@ const LaunchRequestHandler = {
     }
   },
 };
+
 const NameIntentHandler = {
   canHandle(handlerInput) {
     return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
@@ -146,7 +162,7 @@ const CharactersSelectionScreenHandler = {
     var characterdata = await helpers.httpGet(theBase, '', 'Characters');
     var characterRecords = characterdata.records;
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-    var attributes = getAttributes(handlerInput);
+    var attributes = await getAttributes(handlerInput);
     if (!sessionAttributes.hasOwnProperty('characterRecords')) {
       sessionAttributes.characterRecords = [];
     }
@@ -162,24 +178,27 @@ const CharactersSelectionScreenHandler = {
     }
     var whoToFight = ["Alright, lets go " + sessionAttributes.playerPower + "! Now who do you want to fight, " + sessionAttributes.charactersArray,
                       "Are you serious, " +sessionAttributes.playerPower + " my favorite! Who would you like to fight, " + sessionAttributes.charactersArray + "?",
-                      "Everyone, we got "+sessionAttributes.playerPower + " in the house! Who are they going to fight against"+ sessionAttributes.charactersArray+"?",];
+                      "Everyone, we got "+sessionAttributes.playerPower + " in the house! Who are they going to fight against, "+ sessionAttributes.charactersArray+"?",];
     var speakOutput = helpers.randomNoRepeats(whoToFight);
     if (!sessionAttributes.playerPower) {
       speakOutput = "You can pick from any of these characters: " + charactersArray + '!';
     }
-
+    
+    console.log("IN THE FIRST CHARACTER SELECTION>>>>>>>>");
     if (helpers.supportsAPL(handlerInput)) {
       var characterData;
-      if(attributes.firstExpansion === true){
-        characterData = listData2;
-      }else{
-        characterData = listData;
-      }
+      // if(attributes.firstExpansion === true){
+      //   characterData = listData2;
+      // }else{
+      //   characterData = listData;
+      // }
+      var bgImage = await getRandomMainBGImage();
       if (Alexa.getRequestType(handlerInput.requestEnvelope) === 'Alexa.Presentation.APL.UserEvent' && handlerInput.requestEnvelope.request.arguments[0] === 'ItemSelected') {
         var character = handlerInput.requestEnvelope.request.arguments[2];  
         await characterSelector(handlerInput,characterRecords,character);
           return CharactersSelectionScreenTwoHandler.handle(handlerInput);
       }
+      console.log("THE DATA IS ----->>>>>>"+JSON.stringify(powersListData(handlerInput)));
       return handlerInput.responseBuilder
         .speak(helpers.speechPolly(speakOutput))
         .reprompt(helpers.speechPolly(speakOutput))
@@ -187,7 +206,7 @@ const CharactersSelectionScreenHandler = {
           type: 'Alexa.Presentation.APL.RenderDocument',
           version: '1.3',
           document: listAPL,
-          datasources: characterData
+          datasources: powersListData(handlerInput)
         })
         .getResponse();
     } else {
@@ -209,7 +228,6 @@ const CharactersSelectionScreenTwoHandler = {
   },
   async handle(handlerInput) {
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-    var attributes = getAttributes(handlerInput);
     var whoToFight = ["Alright, lets go " + sessionAttributes.playerPower + "! Now who do you want to fight, " + sessionAttributes.charactersArray,
     "Are you serious, " +sessionAttributes.playerPower + " my favorite! Who would you like to fight, " + sessionAttributes.charactersArray + "?",
     "Everyone, we got "+sessionAttributes.playerPower + " in the house! Who are they going to fight against"+ sessionAttributes.charactersArray+"?",];
@@ -219,11 +237,13 @@ var speakOutput = helpers.randomNoRepeats(whoToFight);
     }
 
     if (helpers.supportsAPL(handlerInput)) {
-      if(attributes.firstExpansion === true){
-        characterData = listData2;
-      }else{
-        characterData = listData;
-      }
+      var attributes = await getAttributes(handlerInput);
+      var characterData;
+      // if(attributes.firstExpansion === true){
+      //   characterData = listData2;
+      // }else{
+      //   characterData = listData;
+      // }
       if (Alexa.getRequestType(handlerInput.requestEnvelope) === 'Alexa.Presentation.APL.UserEvent' && handlerInput.requestEnvelope.request.arguments[0] === 'SecondItemSelected') {
         var character = handlerInput.requestEnvelope.request.arguments[2];
         var characters = sessionAttributes.characterRecords;
@@ -238,7 +258,7 @@ var speakOutput = helpers.randomNoRepeats(whoToFight);
           type: 'Alexa.Presentation.APL.RenderDocument',
           version: '1.3',
           document: listAPL2,
-          datasources: characterData
+          datasources: powersListData(handlerInput)
         })
         .getResponse();
     } else {
@@ -304,7 +324,7 @@ const FightStartHandler = {
     console.log("IN FIGHT START HANDLER COMPUTER IS----->>>>" + JSON.stringify(sessionAttributes));
     var speakOutput;
     if(!sessionAttributes.hasOwnProperty("FightStart")){
-       speakOutput = "Ok, now just say a move, or say move list, to access it. "+sessionAttributes.playerPower + ' <phoneme alphabet="ipa" ph="versus">VS</phoneme> ' + sessionAttributes.enemyPower + "! Ready Fight!!";
+       speakOutput = sessionAttributes.playerPower + ' <phoneme alphabet="ipa" ph="versus">VS</phoneme> ' + sessionAttributes.enemyPower + "! Ok, next just say a move, or say move list, to access it.  Ready Fight!!";
         sessionAttributes.FightStart = true;
       }else {
         var fightReturn = ["Let's get back to the fight, just say a move.",
@@ -546,7 +566,11 @@ const YourStatsHandler = {
   async handle(handlerInput) {
     var speakOutput = "";
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-    
+    var attributes = await getAttributes(handlerInput);
+    if(!attributes.hasOwnProperty("stats")){
+      speakOutput = "I am sorry you need to play more to get your standings";
+    }
+
     if (helpers.supportsAPL(handlerInput)) {
       return handlerInput.responseBuilder
         .speak(helpers.speechPolly(speakOutput))
@@ -586,6 +610,10 @@ const YourStandingsHandler = {
   async handle(handlerInput) {
     var speakOutput = "";
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    var attributes = await getAttributes(handlerInput);
+    if(!attributes.hasOwnProperty("stats")){
+      speakOutput = "I am sorry you need to play more to get your standings";
+    }
     
     if (helpers.supportsAPL(handlerInput)) {
       return handlerInput.responseBuilder
@@ -628,6 +656,188 @@ const CloseMoveListHandler = {
   }
 };
 
+const YesNoIntentHandler = {
+  canHandle(handlerInput) {
+      return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+          && ((Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent') ||
+             (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent'));
+  },
+  async handle(handlerInput) {
+    var attributes = await getAttributes(handlerInput);
+      console.log("<=== YESNO HANDLER ===>");
+      const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+      switch(sessionAttributes.previousIntent) {
+          case "ExpansionIntent":
+              if (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent') return CharactersSelectionScreenHandler.handle(handlerInput);
+              else {
+                attributes.firstExpansion = true;
+                await saveAttributes(handlerInput,attributes);
+                  return CharactersSelectionScreenHandler.handle(handlerInput);
+              }
+          break;
+          default:
+              return ErrorHandler.handle(handlerInput);
+          break;
+      }
+  }
+};
+const GetListofISPsHandler = {
+  canHandle(handlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === 'WhatCanIBuyIntent';
+  },
+  handle(handlerInput) {
+    var speakOutput;
+    const locale = handlerInput.requestEnvelope.request.locale;
+    const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
+
+    return ms.getInSkillProducts(locale)
+        .then(async function checkForProductAccess(result) {
+
+         // const expansion = result.inSkillProducts.find(record => record.referenceName === "ExpansionPack1");
+        const products = getAllProducts(result.inSkillProducts);
+        if (products && products.length > 0) {
+          // Customer owns one or more products
+          console.log("GET SKILL PRODUCTS------>>>>>"+JSON.stringify(getSpeakableListOfProducts(products)));
+          speakOutput = "The following are available for purchase: " + getSpeakableListOfProducts(products) + '. To purchase any of the products just say I want to buy, than the product name.';
+          return handlerInput.responseBuilder
+            .speak(helpers.speechPolly(speakOutput))
+            .reprompt()
+            .getResponse();
+        }
+        speakOutput = "I am sorry you have all the products purchased, please come back tomorrow to see if there are any new one's to buy.";
+        // Not entitled to anything yet.
+        console.log('No entitledProducts');
+        return handlerInput.responseBuilder
+          .speak(helpers.speechPolly(speakOutput))
+          .reprompt()
+          .getResponse();
+      },
+      function reportPurchasedProductsError(err) {
+        console.log(`Error calling InSkillProducts API: ${err}`);
+
+        return handlerInput.responseBuilder
+          .speak('Something went wrong in loading the products available.')
+          .getResponse();
+      },
+    );
+  },
+};
+const ExpansionIntentHandler = {
+  canHandle(handlerInput) {
+      return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+          && Alexa.getIntentName(handlerInput.requestEnvelope) === 'BuyIntent';
+  },
+  async handle(handlerInput) {
+      console.log("<=== HINTINTENT HANDLER ===>");
+      const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+      var attributes = await getAttributes(handlerInput);
+      sessionAttributes.previousIntent = sessionAttributes.currentIntent;
+      sessionAttributes.currentIntent = "BuyIntent";
+      var speakOutput = "";
+
+    if (!attributes.hasOwnProperty("firstExpansion")){
+
+          const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
+          const locale = handlerInput.requestEnvelope.request.locale;
+          console.log("GET SKILL PRODUCTS------>>>>>"+JSON.stringify(ms.getInSkillProducts(locale)));
+          return await ms.getInSkillProducts(locale).then(async function checkForProductAccess(result) {
+              const expansion = result.inSkillProducts.find(record => record.referenceName === "ExpansionPack1");
+                         
+                  var upsellMessage = "You have not purchased the first expansion pack, would you like to know more?";
+
+                  return handlerInput.responseBuilder
+                      .addDirective({
+                          "type": "Connections.SendRequest",
+                          "name": "Upsell",
+                          "payload": {
+                              "InSkillProduct": {
+                                  "productId": expansion.productId
+                              },
+                              "upsellMessage": upsellMessage
+                          },
+                          "token": "correlationToken"
+                      })
+                      .getResponse();
+          });
+        }else{
+          speakOutput = "I am sorry you alreay purchased the first expansion, please wait for use to make another.";
+      return handlerInput.responseBuilder
+          .speak(helpers.speechPolly(speakOutput))
+          .reprompt(helpers.speechPolly(speakOutput))
+          .getResponse();
+    }
+  }
+};
+
+const SuccessfulPurchaseResponseHandler = {
+  canHandle(handlerInput) {
+      return handlerInput.requestEnvelope.request.type === "Connections.Response"
+          && (handlerInput.requestEnvelope.request.name === "Buy" || handlerInput.requestEnvelope.request.name === "Upsell")
+          && (handlerInput.requestEnvelope.request.payload.purchaseResult == "ACCEPTED" || handlerInput.requestEnvelope.request.payload.purchaseResult == "ALREADY_PURCHASED");
+  },
+  async handle(handlerInput) {
+      console.log("<=== SuccessfulPurchaseResponse HANDLER ===>");
+
+      const locale = handlerInput.requestEnvelope.request.locale;
+      const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+      const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
+      const productId = handlerInput.requestEnvelope.request.payload.productId;
+      var attributes = await getAttributes(handlerInput);
+      return ms.getInSkillProducts(locale).then(async function(res) {
+          let product = res.inSkillProducts.find(record => record.productId == productId);
+          if (product != undefined) {
+              if (product.referenceName === "ExpansionPack1") {
+                attributes.firstExpansion = true;
+                await saveAttributes(handlerInput,attributes);
+                  return CharactersSelectionScreenHandler.handle(handlerInput);
+              }
+              
+              
+          }
+      });
+  }
+};
+
+const ErrorPurchaseResponseHandler = {
+  canHandle(handlerInput) {
+      return handlerInput.requestEnvelope.request.type === "Connections.Response"
+          && (handlerInput.requestEnvelope.request.name === "Buy" || handlerInput.requestEnvelope.request.name === "Upsell")
+          && handlerInput.requestEnvelope.request.payload.purchaseResult == 'ERROR';
+  },
+  async handle(handlerInput) {
+      console.log("<=== ErrorPurchaseResponse HANDLER ===>");
+            //TODO: add launch request verbage
+
+      return LaunchRequestHandler.handle(handlerInput);
+  }
+};
+
+const UnsuccessfulPurchaseResponseHandler = {
+  canHandle(handlerInput) {
+      return handlerInput.requestEnvelope.request.type === "Connections.Response"
+          && (handlerInput.requestEnvelope.request.name === "Buy" || handlerInput.requestEnvelope.request.name === "Upsell")
+          && handlerInput.requestEnvelope.request.payload.purchaseResult == 'DECLINED';
+  },
+  async handle(handlerInput) {
+      console.log("<=== UnsuccessfulPurchaseResponse HANDLER ===>");
+
+      const locale = handlerInput.requestEnvelope.request.locale;
+      const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+      const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
+      const productId = handlerInput.requestEnvelope.request.payload.productId;
+
+      return ms.getInSkillProducts(locale).then(async function(res) {
+          let product = res.inSkillProducts.find(record => record.productId == productId);
+
+          if (product != undefined) {
+            //TODO: add launch request verbage
+            return LaunchRequestHandler.handle(handlerInput);
+          }
+      });
+  }
+};
+
 const HelpIntentHandler = {
   canHandle(handlerInput) {
     return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
@@ -653,79 +863,6 @@ const CancelAndStopIntentHandler = {
     return handlerInput.responseBuilder
       .speak(speakOutput)
       .getResponse();
-  }
-};
-
-
-const YesNoIntentHandler = {
-  canHandle(handlerInput) {
-      return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-          && ((Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent') ||
-             (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent'));
-  },
-  async handle(handlerInput) {
-    var attributes = getAttributes(handlerInput);
-      console.log("<=== YESNO HANDLER ===>");
-      const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-      switch(sessionAttributes.previousIntent) {
-          case "HintIntent":
-              if (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent') return CharactersSelectionScreenHandler.handle(handlerInput);
-              else {
-                attributes.firstExpansion = true;
-                  return CharactersSelectionScreenHandler.handle(handlerInput);
-              }
-          break;
-          default:
-              return ErrorHandler.handle(handlerInput);
-          break;
-      }
-  }
-};
-
-const ExpansionIntentHandler = {
-  canHandle(handlerInput) {
-      return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-          && Alexa.getIntentName(handlerInput.requestEnvelope) === 'ExpansionIntent';
-  },
-  async handle(handlerInput) {
-      console.log("<=== HINTINTENT HANDLER ===>");
-      const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-      var attributes = getAttributes(handlerInput);
-      sessionAttributes.previousIntent = sessionAttributes.currentIntent;
-      sessionAttributes.currentIntent = "HintIntent";
-      var speakOutput = "";
-
-    if (!attributes.hasOwnProperty(firstExpansion)){
-
-          const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
-          const locale = handlerInput.requestEnvelope.request.locale;
-          
-          return await ms.getInSkillProducts(locale).then(async function checkForProductAccess(result) {
-              const expansion = result.inSkillProducts.find(record => record.referenceName === "ExpansionPack1");
-                         
-                  var upsellMessage = "You have not purchased the first expansion pack, would you like to buy it?";
-
-                  return handlerInput.responseBuilder
-                      .addDirective({
-                          "type": "Connections.SendRequest",
-                          "name": "Upsell",
-                          "payload": {
-                              "InSkillProduct": {
-                                  "productId": expansion.productId
-                              },
-                              "upsellMessage": upsellMessage
-                          },
-                          "token": "correlationToken"
-                      })
-                      .getResponse();
-          });
-        }else{
-          speakOutput = "I am sorry you alreay purchased the first expansion, please wait for use to make another.";
-      return handlerInput.responseBuilder
-          .speak(speakOutput)
-          .reprompt(speakOutput)
-          .getResponse();
-    }
   }
 };
 
@@ -811,8 +948,12 @@ exports.handler = Alexa.SkillBuilders.custom()
     CloseMoveListHandler,
     YourStatsHandler,
     YourStandingsHandler,
+    GetListofISPsHandler,
     YesNoIntentHandler,
     ExpansionIntentHandler,
+    SuccessfulPurchaseResponseHandler,
+    UnsuccessfulPurchaseResponseHandler,
+    ErrorPurchaseResponseHandler,
     HelpIntentHandler,
     CancelAndStopIntentHandler,
     SessionEndedRequestHandler,
@@ -835,21 +976,7 @@ getRandomMainBGImage = async () => {
   var randomBackground = await helpers.randomNoRepeats(bgMainImage);
   return randomBackground;
 };
-getRandomPowerBGImage = async () => {
-  var bgMainImage = ["https://powers.s3.amazonaws.com/maarten-van-den-heuvel-Siuwr3uCir0-unsplash.jpg",
-    "https://powers.s3.amazonaws.com/carles-rabada-gwwWhABtohs-unsplash.jpg",
-    "https://powers.s3.amazonaws.com/david-bruyndonckx-F_hft1Wiyj8-unsplash.jpg",
-    "https://powers.s3.amazonaws.com/deglee-degi-wQImoykAwGs-unsplash.jpg",
-    "https://powers.s3.amazonaws.com/efe-kurnaz-RnCPiXixooY-unsplash.jpg",
-    "https://powers.s3.amazonaws.com/matteo-di-iorio-wkMd_DylG8I-unsplash.jpg",
-    "https://powers.s3.amazonaws.com/michael-shannon-iIrB37J5yfA-unsplash.jpg",
-    "https://powers.s3.amazonaws.com/omid-armin-2GHCdtW45Uw-unsplash.jpg",
-    "https://powers.s3.amazonaws.com/samy-saadi-fFC7IOFT-OM-unsplash.jpg",
-    "https://powers.s3.amazonaws.com/steven-pahel-7IOcBt29C2w-unsplash.jpg"
-  ];
-  var randomBackground = await helpers.randomNoRepeats(bgMainImage);
-  return randomBackground;
-};
+
 getRandomPowerImage = async () => {
   var theBase = "appoBlEf8I1VQdU3r";
   var characterdata = await helpers.httpGet(theBase, '', 'Characters');
@@ -878,25 +1005,28 @@ getAttributes = async (handlerInput) => {
 
 characterSelector = async (handlerInput, characters, character) => {
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-  let attributes = getAttributes(handlerInput);
+  let attributes = await getAttributes(handlerInput);
   if (!sessionAttributes.playerPower) {
     if (!sessionAttributes.hasOwnProperty('player')) {
       sessionAttributes.player = {};
     }
     character = characterFilter(character);
     character = helpers.CapitalizeTheFirstCharacter(character);
-    if(!attributes.hasOwnProperty(characters)){
+    if(!attributes.hasOwnProperty("characters")){
       attributes.characters = {};
     }
     if(!attributes.characters.hasOwnProperty(character)){
       attributes.characters[character] = {};
+    } 
+    if(!attributes.characters[character].hasOwnProperty("count")){
+      attributes.characters[character].count = 0;
     }
     attributes.characters[character].count += 1;  
     if(attributes.characters[character].count === 1){
       attributes.characters[character].score = 100;
     }
 
-    saveAttributes(handlerInput,attributes);
+    await saveAttributes(handlerInput,attributes);
     sessionAttributes.player = findCharacterInData(characters, character);
     sessionAttributes.playerPower = character;
     sessionAttributes.playersHealth = 200;
@@ -907,17 +1037,20 @@ characterSelector = async (handlerInput, characters, character) => {
     character = characterFilter(character);
     character = helpers.CapitalizeTheFirstCharacter(character);
     
-    if(!attributes.hasOwnProperty(compCharacters)){
+    if(!attributes.hasOwnProperty("compCharacters")){
       attributes.compCharacters = {};
     }
     if(!attributes.compCharacters.hasOwnProperty(character)){
       attributes.compCharacters[character] = {};
     }
+    if(!attributes.compCharacters[character].hasOwnProperty("count")){
+      attributes.compCharacters[character].count = 0;
+    }
     attributes.compCharacters[character].count += 1;  
     if(attributes.compCharacters[character].count === 1){
       attributes.compCharacters[character].score = 100;
     }
-
+    await saveAttributes(handlerInput,attributes);
     sessionAttributes.computer = findCharacterInData(characters, character);
     sessionAttributes.computersHealth = 200;
     sessionAttributes.enemyPower = character;
@@ -1140,7 +1273,7 @@ healthBar = (handlerInput) => {
   }
 };
 
-theEnd = (handlerInput) => {
+theEnd = async (handlerInput) => {
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   
   if(sessionAttributes.computersHealth < 0 && sessionAttributes.playersHealth < 0){
@@ -1151,6 +1284,8 @@ theEnd = (handlerInput) => {
   }else if(sessionAttributes.playersHealth < 0){
     sessionAttributes.playerWin = false;
   }
+  await calculateStats(handlerInput);
+
 };
 
 moveList = (handlerInput) => {
@@ -1180,11 +1315,27 @@ moveListSpeak = (handlerInput) => {
   return theList;
 };
 
-calculateStats = (handlerInput) =>{
+calculateStats = async (handlerInput) =>{
   const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-  var attributes = getAttributes(handlerInput);
+  var attributes = await getAttributes(handlerInput);
   let playerCharacter = sessionAttributes.player.Name;
   let compCharacter = sessionAttributes.computer.Name;
+  let charLevel;
+  let charExp;
+  if (!attributes.characters[playerCharacter].hasOwnProperty("charLevel")){
+    charLevel = 1;
+  }else {
+    charLevel = attributes.characters[playerCharacter].charLevel;
+  }
+  if (!attributes.characters[playerCharacter].hasOwnProperty("charExp")){
+    charExp = 0;
+  }else {
+    charExp = attributes.characters[playerCharacter].charExp;
+  }
+  charExp = parseInt(charLevel);
+  
+  levelingCharacter(handlerInput);
+
   let stats = {
     "turns":sessionAttributes.turnCounter,
     "playerCharName":playerCharacter,
@@ -1192,23 +1343,721 @@ calculateStats = (handlerInput) =>{
     "playerPlayingCharacterCount":attributes.characters[playerCharacter].count,
     "computerCharacterCount":attributes.compCharacters[compCharacter].count,
     "rankingScore":attributes.characters[playerCharacter].score,
-    "compRankingScore":attributes.compCharacters[compCharacter].score
+    "compRankingScore":attributes.compCharacters[compCharacter].score,
+    "charLevel":charLevel,
+    "charExp":charExp
 
   };
   attributes.stats = stats;
-  saveAttributes(handlerInput, attributes);
+  await saveAttributes(handlerInput, attributes);
+  getStandings(handlerInput);
 };
 
 getStandings = async (handlerInput) => {
   const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   let computer = sessionAttributes.computer;
   let player = sessionAttributes.player;
-  var attributes = getAttributes(handlerInput);
+  var attributes = await getAttributes(handlerInput);
   let playerScore = attributes.stats.rankingScore;
   let compScore = attributes.stats.compRankingScore;
   let playerWin = sessionAttributes.playerWin;
   var result = EloRating.calculate(playerScore, compScore, playerWin);
   console.log(result.playerRating); 
   console.log(result.opponentRating);
-  saveAttributes(handlerInput, attributes);
+  attributes.stats.rankingScore = result.playerRating;
+  await saveAttributes(handlerInput, attributes);
+};
+
+levelingCharacter = async (handlerInput) => {
+  const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+  var attributes = await getAttributes(handlerInput);
+  let playerCharacter = sessionAttributes.player.Name;
+  let charLevel = attributes.characters[playerCharacter].charLevel;
+  let charExp = attributes.characters[playerCharacter].charExp;
+  var experiancePointsPerWin;
+  switch(charExp) {
+    case charExp < 200:
+      charLevel = 1;
+      charExp += 100;
+      break;
+    case charExp >= 200 && charExp < 500:
+      charLevel = 2;
+      charExp += 125;
+      break;
+    case charExp >= 500 && charExp < 900:
+      charLevel = 3;
+      charExp += 150;
+      break;
+    case charExp >= 900 && charExp < 1400:
+      charExp += 175;
+      charLevel = 4;
+      break;
+    case charExp >= 1400 && charExp < 2000:
+      charExp += 200;
+      charLevel = 5;
+      break;
+    case charExp >= 2000 && charExp < 2700:
+      charExp += 200;
+      charLevel = 6;
+      break;
+    case charExp >= 2700 && charExp < 3500:
+      charExp += 225;
+      charLevel = 7;
+      break;
+    case charExp >= 3500 && charExp < 4400:
+      charExp += 250;
+      charLevel = 8;
+      break;
+    case charExp >= 4400 && charExp < 5400:
+      charExp += 275;
+      charLevel = 9;
+      break;
+    case charExp >= 5400 && charExp < 6500:
+      charExp += 300;
+      charLevel = 10;
+      break;
+    case charExp >= 6500 && charExp < 7700:
+      charExp += 300;
+      charLevel = 11;
+      break;
+    case charExp >= 7700 && charExp < 9000:
+      charExp += 325;
+      charLevel = 12;
+      break;
+    case charExp >= 9000 && charExp < 13000:
+      charExp += 350;
+      charLevel = 13;
+      break;
+    case charExp >= 13000 && charExp < 14500:
+      charExp += 375;
+      charLevel = 14;
+      break;
+    case charExp >= 14500 && charExp < 16100:
+      charExp += 400;
+      charLevel = 15;
+      break;
+    case charExp >= 16100 && charExp < 17800:
+      charExp += 400;
+      charLevel = 16;
+      break;
+    case charExp >= 17800 && charExp < 19600:
+      charExp += 425;
+      charLevel = 17;
+      break;
+    case charExp >= 19600 && charExp < 21500:
+      charExp += 450;
+      charLevel = 18;
+      break;
+    case charExp >= 21500 && charExp < 23500:
+      charExp += 475;
+      charLevel = 19;
+      break;
+    case charExp >= 23500:
+      charExp += 0;
+      charLevel = 20;
+      break;
+    default:
+      console.log("Invalid character experiance");
+  }
+  attributes.characters[playerCharacter].Name = playerCharacter;
+  attributes.characters[playerCharacter].charExp = charExp;
+  attributes.characters[playerCharacter].charLevel = charLevel;
+  saveAttributes(handlerInput,attributes);
+  
+};
+
+function getAllEntitledProducts(inSkillProductList) {
+  const entitledProductList = inSkillProductList.filter(record => record.entitled === 'ENTITLED');
+  return entitledProductList;
+}
+function getAllProducts(inSkillProductList) {
+  const entitledProductList = inSkillProductList.filter(record => record.entitled === 'NOT_ENTITLED');
+  return entitledProductList;
+}
+
+function getSpeakableListOfProducts(entitleProductsList) {
+  const productNameList = entitleProductsList.map(item => item.name);
+  let productListSpeech = productNameList.join(', '); // Generate a single string with comma separated product names
+  productListSpeech = productListSpeech.replace(/_([^_]*)$/, 'and $1'); // Replace last comma with an 'and '
+  return productListSpeech;
+}
+
+powersListData = (handlerInput) => {
+  const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+  var attributes = getAttributes(handlerInput);
+  var characterRecords = sessionAttributes.characterRecords;
+  var backgroundImage = ["https://powers.s3.amazonaws.com/maarten-van-den-heuvel-Siuwr3uCir0-unsplash.jpg",
+  "https://powers.s3.amazonaws.com/carles-rabada-gwwWhABtohs-unsplash.jpg",
+  "https://powers.s3.amazonaws.com/david-bruyndonckx-F_hft1Wiyj8-unsplash.jpg",
+  "https://powers.s3.amazonaws.com/deglee-degi-wQImoykAwGs-unsplash.jpg",
+  "https://powers.s3.amazonaws.com/efe-kurnaz-RnCPiXixooY-unsplash.jpg",
+  "https://powers.s3.amazonaws.com/matteo-di-iorio-wkMd_DylG8I-unsplash.jpg",
+  "https://powers.s3.amazonaws.com/michael-shannon-iIrB37J5yfA-unsplash.jpg",
+  "https://powers.s3.amazonaws.com/omid-armin-2GHCdtW45Uw-unsplash.jpg",
+  "https://powers.s3.amazonaws.com/samy-saadi-fFC7IOFT-OM-unsplash.jpg",
+  "https://powers.s3.amazonaws.com/steven-pahel-7IOcBt29C2w-unsplash.jpg"];
+var charLevel = [];
+  for(var i = 0; i >= characterRecords.length;){
+    if(attributes.characters[i].Name == characterRecords[i].fields.Name){
+      if(attributes.characters[i].charLevel > 1){
+      charLevel.push(attributes.characters[i].charLevel);
+      }
+    }else{ 
+    charLevel.push(1);
+    }
+    i++;
+  }
+
+var theListData = {
+  "listTemplate2Metadata": {
+      "type": "object",
+      "objectId": "lt1Metadata",
+      "backgroundImage": {
+          "contentDescription": null,
+          "smallSourceUrl": null,
+          "largeSourceUrl": null,
+          "sources": [
+              {
+                  "url": "https://powers.s3.amazonaws.com/arches-architecture-art-baroque-316080.jpg",
+                  "size": "small",
+                  "widthPixels": 0,
+                  "heightPixels": 0
+              },
+              {
+                  "url": "https://powers.s3.amazonaws.com/arches-architecture-art-baroque-316080.jpg",
+                  "size": "large",
+                  "widthPixels": 0,
+                  "heightPixels": 0
+              }
+          ]
+      },
+      "title": "Select your Power Character",
+      "logoUrl": "https://d2o906d8ln7ui1.cloudfront.net/images/cheeseskillicon.png"
+  },
+  "listTemplate2ListData": {
+      "type": "list",
+      "listId": "lt2Sample",
+      "totalNumberOfItems": 9,
+      "hintText": "Tap on your character or Say their name.",
+      "listPage": {
+          "listItems": [
+          {
+              "listItemIdentifier": "Lillith",
+              "ordinalNumber": 1,
+              "textContent": {
+                  "primaryText": {
+                      "type": "PlainText",
+                      "text": "Lillith"
+                  },
+                  "secondaryText": {
+                      "type": "PlainText",
+                      "text": "Power: Poison Spray"
+                  },
+                  "thirdText": {
+                    "type": "PlainText",
+                    "text": charLevel[0]
+                  }
+              },
+              "image": {
+                  "contentDescription": null,
+                  "smallSourceUrl": null,
+                  "largeSourceUrl": null,
+                  "sources": [
+                      {
+                          "url": "https://powers.s3.amazonaws.com/samy-saadi-fFC7IOFT-OM-unsplash.jpg",
+                          "size": "small",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      },
+                      {
+                          "url": "https://powers.s3.amazonaws.com/samy-saadi-fFC7IOFT-OM-unsplash.jpg",
+                          "size": "large",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      }
+                  ]
+              },
+              "image2": {
+                  "contentDescription": null,
+                  "smallSourceUrl": null,
+                  "largeSourceUrl": null,
+                  "sources": [
+                      {
+                          "url": "https://powers.s3.amazonaws.com/Lillith.png",
+                          "size": "small",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      },
+                      {
+                          "url": "https://powers.s3.amazonaws.com/Lillith.png",
+                          "size": "large",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      }
+                  ]
+              },
+              "token": "Lillith"
+          },
+          {
+              "listItemIdentifier": "Randell",
+              "ordinalNumber": 2,
+              "textContent": {
+                  "primaryText": {
+                      "type": "PlainText",
+                      "text": "Randell"
+                  },
+                  "secondaryText": {
+                      "type": "PlainText",
+                      "text": "Power: Bone Breaker"
+                  },
+                  "thirdText": {
+                    "type": "PlainText",
+                    "text": charLevel[1]
+                  }
+              },
+              "image": {
+                  "contentDescription": null,
+                  "smallSourceUrl": null,
+                  "largeSourceUrl": null,
+                  "sources": [
+                      {
+                          "url": "https://powers.s3.amazonaws.com/omid-armin-2GHCdtW45Uw-unsplash.jpg",
+                          "size": "small",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      },
+                      {
+                          "url": "https://powers.s3.amazonaws.com/omid-armin-2GHCdtW45Uw-unsplash.jpg",
+                          "size": "large",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      }
+                  ]
+              },
+              "image2": {
+                  "contentDescription": null,
+                  "smallSourceUrl": null,
+                  "largeSourceUrl": null,
+                  "sources": [
+                      {
+                          "url": "https://powers.s3.amazonaws.com/Randell.png",
+                          "size": "small",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      },
+                      {
+                          "url": "https://powers.s3.amazonaws.com/Randell.png",
+                          "size": "large",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      }
+                  ]
+              },
+              "token": "Randell"
+          },
+          {
+              "listItemIdentifier": "Charity",
+              "ordinalNumber": 3,
+              "textContent": {
+                  "primaryText": {
+                      "type": "PlainText",
+                      "text": "Charity"
+                  },
+                  "secondaryText": {
+                      "type": "PlainText",
+                      "text": "Power: Heel Stomp"
+                  },
+                  "thirdText": {
+                    "type": "PlainText",
+                    "text": charLevel[2]
+                  }
+              },
+              "image": {
+                  "contentDescription": null,
+                  "smallSourceUrl": null,
+                  "largeSourceUrl": null,
+                  "sources": [
+                      {
+                          "url": "https://powers.s3.amazonaws.com/efe-kurnaz-RnCPiXixooY-unsplash.jpg",
+                          "size": "small",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      },
+                      {
+                          "url": "https://powers.s3.amazonaws.com/efe-kurnaz-RnCPiXixooY-unsplash.jpg",
+                          "size": "large",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      }
+                  ]
+              },
+              "image2": {
+                  "contentDescription": null,
+                  "smallSourceUrl": null,
+                  "largeSourceUrl": null,
+                  "sources": [
+                      {
+                          "url": "https://powers.s3.amazonaws.com/Charity.png",
+                          "size": "small",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      },
+                      {
+                          "url": "https://powers.s3.amazonaws.com/Charity.png",
+                          "size": "large",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      }
+                  ]
+              },
+              "token": "Charity"
+          },
+          {
+              "listItemIdentifier": "SharpieSharp",
+              "ordinalNumber": 4,
+              "textContent": {
+                  "primaryText": {
+                      "type": "PlainText",
+                      "text": "Sharpie Sharp"
+                  },
+                  "secondaryText": {
+                      "type": "PlainText",
+                      "text": "Power: Spike Throw"
+                  },
+                  "thirdText": {
+                    "type": "PlainText",
+                    "text": charLevel[3]
+                  }
+              },
+              "image": {
+                  "contentDescription": null,
+                  "smallSourceUrl": null,
+                  "largeSourceUrl": null,
+                  "sources": [
+                      {
+                          "url": "https://powers.s3.amazonaws.com/matteo-di-iorio-wkMd_DylG8I-unsplash.jpg",
+                          "size": "small",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      },
+                      {
+                          "url": "https://powers.s3.amazonaws.com/matteo-di-iorio-wkMd_DylG8I-unsplash.jpg",
+                          "size": "large",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      }
+                  ]
+              },
+              "image2": {
+                  "contentDescription": null,
+                  "smallSourceUrl": null,
+                  "largeSourceUrl": null,
+                  "sources": [
+                      {
+                          "url": "https://powers.s3.amazonaws.com/SharpySharp.png",
+                          "size": "small",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      },
+                      {
+                          "url": "https://powers.s3.amazonaws.com/SharpySharp.png",
+                          "size": "large",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      }
+                  ]
+              },
+              "token": "Sharpie Sharp"
+          },
+          {
+              "listItemIdentifier": "LarsThundersquat",
+              "ordinalNumber": 5,
+              "textContent": {
+                  "primaryText": {
+                      "type": "PlainText",
+                      "text": "Lars Thundersquat"
+                  },
+                  "secondaryText": {
+                      "type": "PlainText",
+                      "text": "Power: Thigh Crusher"
+                  },
+                  "thirdText": {
+                    "type": "PlainText",
+                    "text": charLevel[4]
+                  }
+              },
+              "image": {
+                  "contentDescription": null,
+                  "smallSourceUrl": null,
+                  "largeSourceUrl": null,
+                  "sources": [
+                      {
+                          "url": "https://powers.s3.amazonaws.com/michael-shannon-iIrB37J5yfA-unsplash.jpg",
+                          "size": "small",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      },
+                      {
+                          "url": "https://powers.s3.amazonaws.com/michael-shannon-iIrB37J5yfA-unsplash.jpg",
+                          "size": "large",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      }
+                  ]
+              },
+              "image2": {
+                  "contentDescription": null,
+                  "smallSourceUrl": null,
+                  "largeSourceUrl": null,
+                  "sources": [
+                      {
+                          "url": "https://powers.s3.amazonaws.com/LarsThundersquat.png",
+                          "size": "small",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      },
+                      {
+                          "url": "https://powers.s3.amazonaws.com/LarsThundersquat.png",
+                          "size": "large",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      }
+                  ]
+              },
+              "token": "Lars Thundersquat"
+          },
+          {
+              "listItemIdentifier": "Edge",
+              "ordinalNumber": 6,
+              "textContent": {
+                  "primaryText": {
+                      "type": "PlainText",
+                      "text": "Edge"
+                  },
+                  "secondaryText": {
+                      "type": "PlainText",
+                      "text": "Power: Speed Attack"
+                  },
+                  "thirdText": {
+                    "type": "PlainText",
+                    "text": charLevel[5]
+                  }
+              },
+              "image": {
+                  "contentDescription": null,
+                  "smallSourceUrl": null,
+                  "largeSourceUrl": null,
+                  "sources": [
+                      {
+                          "url": "https://powers.s3.amazonaws.com/deglee-degi-wQImoykAwGs-unsplash.jpg",
+                          "size": "small",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      },
+                      {
+                          "url": "https://powers.s3.amazonaws.com/deglee-degi-wQImoykAwGs-unsplash.jpg",
+                          "size": "large",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      }
+                  ]
+              },
+              "image2": {
+                  "contentDescription": null,
+                  "smallSourceUrl": null,
+                  "largeSourceUrl": null,
+                  "sources": [
+                      {
+                          "url": "https://powers.s3.amazonaws.com/Edge.png",
+                          "size": "small",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      },
+                      {
+                          "url": "https://powers.s3.amazonaws.com/Edge.png",
+                          "size": "large",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      }
+                  ]
+              },
+              "token": "Edge"
+          },
+          {
+              "listItemIdentifier": "Argus",
+              "ordinalNumber": 7,
+              "textContent": {
+                  "primaryText": {
+                      "type": "PlainText",
+                      "text": "Argus"
+                  },
+                  "secondaryText": {
+                      "type": "PlainText",
+                      "text": "Power: Hand Beam Cannons"
+                  },
+                  "thirdText": {
+                    "type": "PlainText",
+                    "text": charLevel[6]
+                  }
+              },
+              "image": {
+                  "contentDescription": null,
+                  "smallSourceUrl": null,
+                  "largeSourceUrl": null,
+                  "sources": [
+                      {
+                          "url": "https://powers.s3.amazonaws.com/david-bruyndonckx-F_hft1Wiyj8-unsplash.jpg",
+                          "size": "small",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      },
+                      {
+                          "url": "https://powers.s3.amazonaws.com/david-bruyndonckx-F_hft1Wiyj8-unsplash.jpg",
+                          "size": "large",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      }
+                  ]
+              },
+              "image2": {
+                  "contentDescription": null,
+                  "smallSourceUrl": null,
+                  "largeSourceUrl": null,
+                  "sources": [
+                      {
+                          "url": "https://powers.s3.amazonaws.com/Argus.png",
+                          "size": "small",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      },
+                      {
+                          "url": "https://powers.s3.amazonaws.com/Argus.png",
+                          "size": "large",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      }
+                  ]
+              },
+              "token": "Argus"
+          },
+          {
+              "listItemIdentifier": "Karrigan",
+              "ordinalNumber": 8,
+              "textContent": {
+                  "primaryText": {
+                      "type": "PlainText",
+                      "text": "Karrigan"
+                  },
+                  "secondaryText": {
+                      "type": "PlainText",
+                      "text": "Power: Stone Throw"
+                  },
+                  "thirdText": {
+                    "type": "PlainText",
+                    "text": charLevel[7]
+                  }
+              },
+              "image": {
+                  "contentDescription": null,
+                  "smallSourceUrl": null,
+                  "largeSourceUrl": null,
+                  "sources": [
+                      {
+                          "url": "https://powers.s3.amazonaws.com/carles-rabada-gwwWhABtohs-unsplash.jpg",
+                          "size": "small",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      },
+                      {
+                          "url": "https://powers.s3.amazonaws.com/carles-rabada-gwwWhABtohs-unsplash.jpg",
+                          "size": "large",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      }
+                  ]
+              },
+              "image2": {
+                  "contentDescription": null,
+                  "smallSourceUrl": null,
+                  "largeSourceUrl": null,
+                  "sources": [
+                      {
+                          "url": "https://powers.s3.amazonaws.com/Karrigan.png",
+                          "size": "small",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      },
+                      {
+                          "url": "https://powers.s3.amazonaws.com/Karrigan.png",
+                          "size": "large",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      }
+                  ]
+              },
+              "token": "Karrigan"
+          },
+          {
+              "listItemIdentifier": "ElectricMean",
+              "ordinalNumber": 9,
+              "textContent": {
+                  "primaryText": {
+                      "type": "PlainText",
+                      "text": "Electric Mean"
+                  },
+                  "secondaryText": {
+                      "type": "PlainText",
+                      "text": "Power: Heel Stomp"
+                  },
+                  "thirdText": {
+                    "type": "PlainText",
+                    "text": charLevel[8]
+                  }
+              },
+              "image": {
+                  "contentDescription": null,
+                  "smallSourceUrl": null,
+                  "largeSourceUrl": null,
+                  "sources": [
+                      {
+                          "url": "https://powers.s3.amazonaws.com/maarten-van-den-heuvel-Siuwr3uCir0-unsplash.jpg",
+                          "size": "small",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      },
+                      {
+                          "url": "https://powers.s3.amazonaws.com/maarten-van-den-heuvel-Siuwr3uCir0-unsplash.jpg",
+                          "size": "large",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      }
+                  ]
+              },
+              "image2": {
+                  "contentDescription": null,
+                  "smallSourceUrl": null,
+                  "largeSourceUrl": null,
+                  "sources": [
+                      {
+                          "url": "https://powers.s3.amazonaws.com/ElectricMean.png",
+                          "size": "small",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      },
+                      {
+                          "url": "https://powers.s3.amazonaws.com/ElectricMean.png",
+                          "size": "large",
+                          "widthPixels": 0,
+                          "heightPixels": 0
+                      }
+                  ]
+              },
+              "token": "Electric Mean"
+          }
+      ]
+      }
+  }
+};
+
+return theListData;
 };
