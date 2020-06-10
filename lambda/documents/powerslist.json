@@ -160,7 +160,7 @@
                             ],
                             "to": [
                                 {
-                                    "translateX": "${distance && ('-' + distance) || '-1500'}"
+                                    "translateX": "${distance && ('-' + distance) || '-500'}"
                                 }
                             ]
                         }
@@ -176,7 +176,7 @@
                             "property": "transform",
                             "from": [
                                 {
-                                    "translateX": "${distance && ('-' + distance) || '-1500'}"
+                                    "translateX": "${distance && ('-' + distance) || '-500'}"
                                 }
                             ],
                             "to": [
@@ -398,7 +398,7 @@
                                 "onMount": [
                                     {
                                         "type": "slideInRight",
-                                        "duration": 8000,
+                                        "duration": 2000,
                                         "delay": 500
                                     }
                                 ]
