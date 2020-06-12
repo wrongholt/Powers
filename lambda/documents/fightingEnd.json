@@ -358,7 +358,7 @@
                       "type": "Image",
                       "width": "100vw",
                       "height": "100vh",
-                      "source": "https://powers.s3.amazonaws.com/photo-of-pathway-between-walls-1472234.jpg",
+                      "source": "${payload.mainData.properties.bgImage}",
                       "scale": "best-fill",
                       "overlayColor": "rgba(0,0,0,0.2)",
                       "position": "absolute"

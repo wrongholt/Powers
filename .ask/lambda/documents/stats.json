@@ -156,11 +156,11 @@
                               "items": [
                                   {
                                       "type": "AlexaHeader",
-                                      "headerTitle": "${payload.mainData.properties.title} Statistics"
+                                      "headerTitle": "${payload.mainData.properties.title}'s Statistics"
                                   },
                                   {
                                       "type": "Text",
-                                      "text": "<b>${payload.mainData.properties.title}Stats</b>",
+                                      "text": "<b>${payload.mainData.properties.title}'s Stats</b>",
                                       "style": "textStyleBody",
                                       "width": "70vw",
                                       "textAlign": "center"
@@ -201,7 +201,7 @@
                   },
                   {
                       "type": "AlexaHeader",
-                      "headerTitle": "${payload.mainData.properties.title}"                  
+                      "headerTitle": "${payload.mainData.properties.title}'s Statistics"                  
                     },
                   {
                       "type": "Container",
@@ -223,7 +223,7 @@
                                       "items": [
                                           {
                                               "type": "Text",
-                                              "text": "<b>${payload.mainData.properties.title} Stats</b>",
+                                              "text": "<b>${payload.mainData.properties.title}'s Stats</b>",
                                               "style": "textStyleBody"
                                           },
                                           {

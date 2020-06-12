@@ -14,6 +14,7 @@ const standings = require('./documents/standings.json');
 const listData = require('./documents/listData');
 const fightAPL = require('./documents/fighting.json');
 const fightStartAPL = require('./documents/fightingStart.json');
+const fightEndAPL = require('./documents/fightingEnd.json');
 const moveListAPL = require('./documents/fightingList.json');
 const helpers = require('./helpers');
 const dynamoDbPersistenceAdapter = new DynamoDbPersistenceAdapter({
@@ -35,19 +36,11 @@ const LaunchRequestHandler = {
     var characterdata = await helpers.httpGet(theBase, '', 'Characters');
     var characterRecords = characterdata.records;
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    sessionAttributes.previousIntent = sessionAttributes.currentIntent;
+    sessionAttributes.currentIntent = "launch";
     var attributes = await getAttributes(handlerInput);
-    if (!sessionAttributes.hasOwnProperty('characterRecords')) {
-      sessionAttributes.characterRecords = [];
-    }
-    sessionAttributes.characterRecords = characterRecords;
-    var charactersArray = [];
-    for (var i = 0; i < characterRecords.length;) {
-      charactersArray.push(characterRecords[i].fields.Name);
-      i++;
-    }
-    sessionAttributes.charactersArray = charactersArray;
 
-    var name = attributes.name;
+    var name;
     var power1 = await getRandomPowerImage();
     var power2 = await getRandomPowerImage();
     var bgImage = await getRandomMainBGImage();
@@ -55,13 +48,42 @@ const LaunchRequestHandler = {
     if (Object.keys(attributes).length === 0) {
       speakOutput = '<break strength="strong"/><p>Welcome, to <phoneme alphabet="ipa" ph="pɑwɚrs">Powers</phoneme>. I am  <say-as interpret-as="spell-out">G34XY</say-as>, a <phoneme alphabet="ipa" ph="pɑwɚrs">Powers</phoneme> fighter helper. </p><p>I am here to help you in any way possible through out any fight you may ask for my help by saying <break strength="strong"/> move list <break strength="strong"/>or bot help.</p> I will try to help in any way possible.<break strength="strong"/><amazon:emotion name="excited" intensity="high"> Except, I cannot fight for you!!</amazon:emotion> That is not in my contract you hear me <break strength="strong"/><emphasis level="strong">I do not fight!</emphasis>  Let\'s start by getting your name, we use this to keep track of your stats and how you are doing on the leaderboard. Just say, my name is.';
     } else {
+      name = attributes.name;
       var launch2 = ['<p>Welcome back to Powers, ' + helpers.capitalize_Words(name) + '. </p> <p>Would you like to view your rankings or pick your character to fight?</p>',
         '<p>Hey you came back!</p> <p>This is great news.</p> <p>What would you like to do fight or look at your rankings?</p>',
         '<p>Welcome back! You know, I am not the only bot here, there is another that helps me out from time to time, her name is <say-as interpret-as="spell-out">A73XA</say-as>.</p> <p>Now would you like to fight again or view your rankings?</p> '
       ];
       speakOutput = helpers.randomNoRepeats(launch2);
     }
+    if (!sessionAttributes.hasOwnProperty('characterRecords')) {
+      sessionAttributes.characterRecords = [];
+    }
+    if (!attributes.hasOwnProperty("characters")) {
+      attributes.characters = {};
+    }
+    sessionAttributes.characterRecords = characterRecords;
+    var charactersArray = [];
+    for (var i = 0; i < characterRecords.length;) {
+      charactersArray.push(characterRecords[i].fields.Name);
 
+      if (!attributes.characters.hasOwnProperty(characterRecords[i].fields.Name)) {
+        attributes.characters[characterRecords[i].fields.Name] = {};
+        attributes.characters[characterRecords[i].fields.Name].charLevel = 1;
+        attributes.characters[characterRecords[i].fields.Name].charExp = 0;
+      }
+      i++;
+    }
+    if (sessionAttributes.previousIntent === "stats") {
+      speakOutput = "I am sorry you need to play more to get your statistics.";
+    } else if (sessionAttributes.previousIntent === "CopperXP") {
+      speakOutput = "Outstanding you just bought the Copper Experience Pack. If you wish to use them just say, Use Copper Pack or Use Copper Pack on Character name.";
+    } else if (sessionAttributes.previousIntent === "SilverXP") {
+      speakOutput = "Outstanding you just bought the Silver Experience Pack. If you wish to use them just say, Use Silver Pack or Use Silver Pack on Character name.";
+    } else if (sessionAttributes.previousIntent === "GoldXP") {
+      speakOutput = "Outstanding you just bought the Gold Experience Pack. If you wish to use them just say, Use Gold Pack or Use Gold Pack on Character name.";
+    }
+    sessionAttributes.charactersArray = charactersArray;
+    await saveAttributes(handlerInput, attributes);
     if (helpers.supportsAPL(handlerInput)) {
       return handlerInput.responseBuilder
         .speak(helpers.speechPolly(speakOutput))
@@ -99,7 +121,9 @@ const NameIntentHandler = {
   },
   async handle(handlerInput) {
     var attributes = await getAttributes(handlerInput);
-
+    let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    sessionAttributes.previousIntent = sessionAttributes.currentIntent;
+    sessionAttributes.currentIntent = "nameIntent";
     if (attributes.name) {
       return CharactersSelectionScreenHandler.handle(handlerInput);
     } else {
@@ -139,7 +163,7 @@ const NameIntentHandler = {
       attributes.nameid = userName + usersID;
       await saveAttributes(handlerInput, attributes);
       var nameSpeak = ['Perfect, ' + helpers.capitalize_Words(userName) + ", now lets pick your character, just say pick character.",
-        'Outstanding, I have saved your name for rankings and to be more personible. Now lets pick your character, ' + helpers.capitalize_Words(userName) + '. Just say; pick character.',
+        'Outstanding, I have saved your name for rankings and to be more personable. Now lets pick your character, ' + helpers.capitalize_Words(userName) + '. Just say; pick character.',
         'Well hello there, ' + helpers.capitalize_Words(userName) + '! It is nice to meet you. Next, you got to pick a character you can do that by saying, pick character.'
       ];
       const speakOutput = helpers.randomNoRepeats(nameSpeak);
@@ -166,7 +190,12 @@ const CharactersSelectionScreenHandler = {
     var characterdata = await helpers.httpGet(theBase, '', 'Characters');
     var characterRecords = characterdata.records;
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    sessionAttributes.previousIntent = sessionAttributes.currentIntent;
+    sessionAttributes.currentIntent = "characterSelection";
     var attributes = await getAttributes(handlerInput);
+    if (Object.keys(attributes).length === 0) {
+      return LaunchRequestHandler.handle(handlerInput);
+    }
     if (!sessionAttributes.hasOwnProperty('characterRecords')) {
       sessionAttributes.characterRecords = [];
     }
@@ -181,7 +210,7 @@ const CharactersSelectionScreenHandler = {
       charactersArray = charactersArray.slice(1).join(', <break strength="strong"/>').replace(/, ([^,]*)$/, ' or $1');
     }
     var whoToFight = ["Alright, lets go " + sessionAttributes.playerPower + "! Now who do you want to fight, " + sessionAttributes.charactersArray,
-      "Are you serious, " + sessionAttributes.playerPower + " my favorite! Who would you like to fight, " + sessionAttributes.charactersArray + "?",
+      "Are you serious, " + sessionAttributes.playerPower + " is my favorite! Who would you like to fight, " + sessionAttributes.charactersArray + "?",
       "Everyone, we got " + sessionAttributes.playerPower + " in the house! Who are they going to fight against, " + sessionAttributes.charactersArray + "?",
     ];
     var speakOutput = helpers.randomNoRepeats(whoToFight);
@@ -189,15 +218,7 @@ const CharactersSelectionScreenHandler = {
       speakOutput = "You can pick from any of these characters: " + charactersArray + '!';
     }
 
-    console.log("IN THE FIRST CHARACTER SELECTION>>>>>>>>");
     if (helpers.supportsAPL(handlerInput)) {
-      var characterData;
-      // if(attributes.firstExpansion === true){
-      //   characterData = powersListExpansionData(handlerInput);
-      // }else{
-      //   characterData = powersListMainData(handlerInput);
-      // }
-      var bgImage = await getRandomMainBGImage();
       if (Alexa.getRequestType(handlerInput.requestEnvelope) === 'Alexa.Presentation.APL.UserEvent' && handlerInput.requestEnvelope.request.arguments[0] === 'ItemSelected') {
         var character = handlerInput.requestEnvelope.request.arguments[2];
         await characterSelector(handlerInput, characterRecords, character);
@@ -210,7 +231,7 @@ const CharactersSelectionScreenHandler = {
           type: 'Alexa.Presentation.APL.RenderDocument',
           version: '1.3',
           document: listAPL,
-          datasources: listData.powersListMainData(handlerInput)
+          datasources: await listData.powersListMainData(handlerInput)
         })
         .getResponse();
     } else {
@@ -232,9 +253,11 @@ const CharactersSelectionScreenTwoHandler = {
   },
   async handle(handlerInput) {
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    sessionAttributes.previousIntent = sessionAttributes.currentIntent;
+    sessionAttributes.currentIntent = "characterSelectionTwo";
     var whoToFight = ["Alright, lets go " + sessionAttributes.playerPower + "! Now who do you want to fight, " + sessionAttributes.charactersArray,
-      "Are you serious, " + sessionAttributes.playerPower + " my favorite! Who would you like to fight, " + sessionAttributes.charactersArray + "?",
-      "Everyone, we got " + sessionAttributes.playerPower + " in the house! Who are they going to fight against" + sessionAttributes.charactersArray + "?",
+      "Are you serious, " + sessionAttributes.playerPower + " is my favorite! Who would you like to fight, " + sessionAttributes.charactersArray + "?",
+      "Everyone, we got " + sessionAttributes.playerPower + " in the house! Who are they going to fight against, " + sessionAttributes.charactersArray + "?",
     ];
     var speakOutput = helpers.randomNoRepeats(whoToFight);
     if (!sessionAttributes.playerPower) {
@@ -242,13 +265,6 @@ const CharactersSelectionScreenTwoHandler = {
     }
 
     if (helpers.supportsAPL(handlerInput)) {
-      var attributes = await getAttributes(handlerInput);
-      var characterData;
-      // if(attributes.firstExpansion === true){
-      //   characterData = powersListExpansionData(handlerInput);
-      // }else{
-      //   characterData = powersListMainData(handlerInput);
-      // }
       if (Alexa.getRequestType(handlerInput.requestEnvelope) === 'Alexa.Presentation.APL.UserEvent' && handlerInput.requestEnvelope.request.arguments[0] === 'SecondItemSelected') {
         var character = handlerInput.requestEnvelope.request.arguments[2];
         var characters = sessionAttributes.characterRecords;
@@ -263,7 +279,7 @@ const CharactersSelectionScreenTwoHandler = {
           type: 'Alexa.Presentation.APL.RenderDocument',
           version: '1.3',
           document: listAPL2,
-          datasources: listData.powersListMainData(handlerInput)
+          datasources: await listData.powersListMainData(handlerInput)
         })
         .getResponse();
     } else {
@@ -283,6 +299,8 @@ const CharacterSelectedHandler = {
   async handle(handlerInput) {
     var character;
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    sessionAttributes.previousIntent = sessionAttributes.currentIntent;
+    sessionAttributes.currentIntent = "characterSelected";
     var characters = sessionAttributes.characterRecords;
     if (!sessionAttributes.playerPower) {
       character = handlerInput.requestEnvelope.request.intent.slots.Characters.value;
@@ -305,6 +323,8 @@ const EnemyRandomSelectedHandler = {
   async handle(handlerInput) {
     var speakOutput;
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    sessionAttributes.previousIntent = sessionAttributes.currentIntent;
+    sessionAttributes.currentIntent = "randomSelected";
     var characters = sessionAttributes.characterRecords;
     var charactersArray = sessionAttributes.charactersArray;
     var randomCharacter = helpers.randomNoRepeats(charactersArray);
@@ -326,6 +346,8 @@ const FightStartHandler = {
   },
   async handle(handlerInput) {
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    sessionAttributes.previousIntent = sessionAttributes.currentIntent;
+    sessionAttributes.currentIntent = "fightStart";
     console.log("IN FIGHT START HANDLER COMPUTER IS----->>>>" + JSON.stringify(sessionAttributes));
     var speakOutput;
     if (!sessionAttributes.hasOwnProperty("FightStart")) {
@@ -341,7 +363,10 @@ const FightStartHandler = {
 
     }
 
+
     if (helpers.supportsAPL(handlerInput)) {
+      sessionAttributes.bgImageFighting = await getRandomMainBGImage();
+      var bgImage = sessionAttributes.bgImageFighting;
       return handlerInput.responseBuilder
         .speak(helpers.speechPolly(speakOutput))
         .reprompt(helpers.speechPolly(speakOutput))
@@ -353,6 +378,7 @@ const FightStartHandler = {
             "mainData": {
               "type": "object",
               "properties": {
+                "bgImage": bgImage,
                 "playerName": sessionAttributes.player.Name,
                 "computerName": sessionAttributes.computer.Name,
                 "powerPlayer": sessionAttributes.player.PWR_IMG,
@@ -378,6 +404,8 @@ const PlayerFightHandler = {
   },
   async handle(handlerInput) {
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    sessionAttributes.previousIntent = sessionAttributes.currentIntent;
+    sessionAttributes.currentIntent = "fightHandler";
     var speakOutput;
     var audio;
     var move = handlerInput.requestEnvelope.request.intent.slots.Move.value;
@@ -387,27 +415,31 @@ const PlayerFightHandler = {
       speakOutput = playerBlocked(handlerInput, move);
     } else {
       if (move !== "use power move" || move !== "power move") {
-        fightingPlayer(handlerInput, move);
+        await fightingPlayer(handlerInput, move);
+        if (sessionAttributes.didCompDodge) {
+          speakOutput = sessionAttributes.computer.Name + " blocked your move.";
+          sessionAttributes.playerLastMoveSpeak = speakOutput;
+          sessionAttributes.didCompDodge = false;
+        } else if (sessionAttributes.playerPowerAttackAvail === true) {
+          speakOutput = "Your " + sessionAttributes.playerMoveData.Name + " did " + sessionAttributes.playerMoveData.Damage + " points of damage to " + sessionAttributes.computer.Name + "! You also have your power move available, to use just say, power move. They now have " + sessionAttributes.computersHealth + " points left!";
+          sessionAttributes.playerLastMoveSpeak = speakOutput;
+        } else {
+          speakOutput = "Your " + sessionAttributes.playerMoveData.Name + " did " + sessionAttributes.playerMoveData.Damage + " points of damage to " + sessionAttributes.computer.Name + "! They now have " + sessionAttributes.computersHealth + " points left!";
+          sessionAttributes.playerLastMoveSpeak = speakOutput;
+        }
       }
       if (sessionAttributes.playerPowerAttackAvail === true & move === "use power move" || sessionAttributes.playerPowerAttackAvail === true & move === "power move") {
         usePowerAttack(handlerInput, sessionAttributes.player, "player");
         audio = sessionAttributes.player.POWER_AUDIO;
         if (sessionAttributes.player.Name === "Charity") {
           speakOutput = audio + "You just used " + sessionAttributes.player.POWER_ATK + " healing yourself for " + sessionAttributes.player.POWER_DMG + " points! You now have " + sessionAttributes.playersHealth + " points!";
+          sessionAttributes.playerLastMoveSpeak = speakOutput;
         } else {
           speakOutput = audio + "You just used " + sessionAttributes.player.POWER_ATK + " doing  a total of " + sessionAttributes.player.POWER_DMG + " damage to " + sessionAttributes.computer.Name + "! They now have " + sessionAttributes.computersHealth + " points left!";
+          sessionAttributes.playerLastMoveSpeak = speakOutput;
         }
         sessionAttributes.playerPowerAttackAvail = false;
         sessionAttributes.powersAttackTotal = 0;
-      } else if (sessionAttributes.didCompDodge) {
-        speakOutput = sessionAttributes.computer.Name + " blocked your move.";
-        sessionAttributes.didCompDodge = false;
-      } else if (sessionAttributes.playerPowerAttackAvail === true) {
-        speakOutput = "Your " + sessionAttributes.playerMoveData.Name + " did " + sessionAttributes.playerMoveData.Damage + " points of damage to " + sessionAttributes.computer.Name + "! You also have your power move available, to use just say, power move. They now have " + sessionAttributes.computersHealth + " points left!";
-
-      } else {
-        speakOutput = "Your " + sessionAttributes.playerMoveData.Name + " did " + sessionAttributes.playerMoveData.Damage + " points of damage to " + sessionAttributes.computer.Name + "! They now have " + sessionAttributes.computersHealth + " points left!";
-
       }
 
       if (sessionAttributes.compPowerAttackAvail === true) {
@@ -415,24 +447,30 @@ const PlayerFightHandler = {
         audio = sessionAttributes.computer.POWER_AUDIO;
         if (sessionAttributes.computer.Name === "Charity") {
           speakOutput += audio + " Your opponent just used " + sessionAttributes.computer.POWER_ATK + " healing herself for " + sessionAttributes.player.POWER_DMG + " points! They now have " + sessionAttributes.computersHealth + " points!";
+          sessionAttributes.computerLastMoveSpeak = speakOutput;
         } else {
           speakOutput += audio + " Your opponent just activated their power move " + sessionAttributes.computer.POWER_ATK + " and did " + sessionAttributes.computer.POWER_DMG + " points of damage to you! You now have " + sessionAttributes.playersHealth + " points left, keep fighting!";
+          sessionAttributes.computerLastMoveSpeak = speakOutput;
         }
         sessionAttributes.compPowerAttackAvail = false;
         sessionAttributes.powersAttackTotal2 = 0;
       } else if (sessionAttributes.didPlayerDodge) {
-        speakOutput += " " + sessionAttributes.player.Name + ", has blocked the move!";
+        speakOutput += " " + sessionAttributes.player.Name + ", has blocked " + sessionAttributes.player.Name + "'s move!";
+        sessionAttributes.computerLastMoveSpeak = speakOutput;
         sessionAttributes.didPlayerDodge = false;
       } else {
+        sessionAttributes.computerLastMoveSpeak = speakOutput;
         speakOutput += " Your opponents, " + sessionAttributes.computerMoveData.Name + " did " + sessionAttributes.computerMoveData.Damage + " points of damage to " + sessionAttributes.player.Name + "! You now have " + sessionAttributes.playersHealth + " points left, keep fighting!";
+        sessionAttributes.computerLastMoveSpeak = speakOutput;
       }
     }
     sessionAttributes.turnCounter += 1;
-    if (sessionAttributes.playersHealth < 0 || sessionAttributes.computersHealth < 0) {
-      theEnd(handlerInput);
+    if (sessionAttributes.playersHealth <= 0 || sessionAttributes.computersHealth <= 0) {
+      await theEnd(handlerInput);
       return FightEndHandler.handle(handlerInput);
     }
     if (helpers.supportsAPL(handlerInput)) {
+      var bgImage = sessionAttributes.bgImageFighting;
       healthBar(handlerInput);
       return handlerInput.responseBuilder
         .speak(helpers.speechPolly(speakOutput))
@@ -445,6 +483,7 @@ const PlayerFightHandler = {
             "mainData": {
               "type": "object",
               "properties": {
+                "bgImage": bgImage,
                 "powerPlayer": sessionAttributes.player.PWR_IMG,
                 "powerComputer": sessionAttributes.computer.PWR_IMG,
                 "power": {
@@ -479,33 +518,41 @@ const FightEndHandler = {
     var speakOutput;
     var color;
     var bgColor;
+    var displayOutput;
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    sessionAttributes.previousIntent = sessionAttributes.currentIntent;
+    sessionAttributes.currentIntent = "fightEnd";
     if (sessionAttributes.computerWin === false && sessionAttributes.playerWin === false) {
-      speakOutput = "Wow it was a tie you will get them next time!";
+      speakOutput = sessionAttributes.playerLastMoveSpeak + " " + sessionAttributes.computerLastMoveSpeak + " Wow, it was a tie, you will get them next time!";
+      displayOutput = "Wow, it was a tie, you will get them next time!";
       bgColor = "#eeeeee";
       color = "#0E2773";
     } else if (sessionAttributes.playerWin === false) {
-      speakOutput = "Sorry but you lost always next time!";
+      speakOutput = sessionAttributes.playerLastMoveSpeak + " " + sessionAttributes.computerLastMoveSpeak + " Sorry, but you lost, there is always next time!";
+      displayOutput = "Sorry, but you lost, there is always next time!";
       bgColor = "#BF1736";
       color = "#0E2773";
     } else if (sessionAttributes.computerWin === false) {
-      speakOutput = "Nice you won!";
+      speakOutput = sessionAttributes.playerLastMoveSpeak + " " + sessionAttributes.computerLastMoveSpeak + " Nice you won!";
+      displayOutput = "Nice you won!";
       bgColor = "#0E2773";
       color = "#BF1736";
     }
     if (helpers.supportsAPL(handlerInput)) {
-      healthBar(handlerInput);
+      var bgImage = sessionAttributes.bgImageFighting;
+      handlerInput.attributesManager.setSessionAttributes({});
       return handlerInput.responseBuilder
         .speak(helpers.speechPolly(speakOutput))
         .reprompt(helpers.speechPolly(speakOutput))
         .addDirective({
           type: 'Alexa.Presentation.APL.RenderDocument',
           version: '1.3',
-          document: fightAPL,
+          document: fightEndAPL,
           datasources: {
             "mainData": {
               "type": "object",
               "properties": {
+                "bgImage": bgImage,
                 "bgColor": bgColor,
                 "color": color,
                 "message": speakOutput
@@ -515,6 +562,7 @@ const FightEndHandler = {
         })
         .getResponse();
     } else {
+      handlerInput.attributesManager.setSessionAttributes({});
       return handlerInput.responseBuilder
         .speak(helpers.speechPolly(speakOutput))
         .reprompt()
@@ -531,7 +579,8 @@ const MoveListHandler = {
   async handle(handlerInput) {
     var speakOutput = moveListSpeak(handlerInput);
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-
+    sessionAttributes.previousIntent = sessionAttributes.currentIntent;
+    sessionAttributes.currentIntent = "moveList";
     if (helpers.supportsAPL(handlerInput)) {
       return handlerInput.responseBuilder
         .speak(helpers.speechPolly(speakOutput))
@@ -571,14 +620,19 @@ const YourStatsHandler = {
   async handle(handlerInput) {
     var speakOutput = "";
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    sessionAttributes.previousIntent = sessionAttributes.currentIntent;
+    sessionAttributes.currentIntent = "stats";
     var attributes = await getAttributes(handlerInput);
     if (!attributes.hasOwnProperty("stats")) {
-      speakOutput = "I am sorry you need to play more to get your standings";
+      return LaunchRequestHandler.handle(handlerInput);
     }
+    var playerName = attributes.name;
     var statsObject = await statsData(handlerInput);
-        speakOutput = statsObject.speakOutput;
+    speakOutput = "The stats for " + playerName + " are the following: " + statsObject.speakOutput;
+
     if (helpers.supportsAPL(handlerInput)) {
-      
+      var bgImage = await getRandomMainBGImage();
+
       return handlerInput.responseBuilder
         .speak(helpers.speechPolly(speakOutput))
         .reprompt(helpers.speechPolly(speakOutput))
@@ -591,11 +645,11 @@ const YourStatsHandler = {
               "type": "object",
               "properties": {
                 "power": statsObject.charURL,
-                "bgImage": "https://powers.s3.amazonaws.com/street-urban-japan-brasil-50859+(1).jpg",
-                "title": sessionAttributes.name ,
+                "bgImage": bgImage,
+                "title": playerName,
                 "subtitle": statsObject.topCharacter,
                 "primaryText": statsObject.score + statsObject.statString
-        
+
               }
             }
           }
@@ -618,6 +672,8 @@ const YourStandingsHandler = {
   async handle(handlerInput) {
     var speakOutput = "";
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    sessionAttributes.previousIntent = sessionAttributes.currentIntent;
+    sessionAttributes.currentIntent = "standings";
     var attributes = await getAttributes(handlerInput);
     if (!attributes.hasOwnProperty("stats")) {
       speakOutput = "I am sorry you need to play more to get your standings";
@@ -653,6 +709,99 @@ const YourStandingsHandler = {
     }
   }
 };
+const UseExperiencePackHandler = {
+  canHandle(handlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === 'UseExperiencePack';
+  },
+  async handle(handlerInput) {
+    let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    var attributes = await getAttributes(handlerInput);
+    var experiencePack = handlerInput.requestEnvelope.request.intent.slots.ExperiencePack.value;
+    sessionAttributes.previousIntent = sessionAttributes.currentIntent;
+    sessionAttributes.currentIntent = "useExperiencePack";
+    var charactersArray = sessionAttributes.charactersArray;
+
+    if (experiencePack === "copper" || experiencePack === "Copper") {
+      if (attributes.hasOwnProperty("copperXP") || attributes.copperXP === 0) {
+        speakOutput = "I am sorry you need to buy some experience packs. Is there anything else you would like to do like pick character to fight or look at your stats?";
+      } else {
+        sessionAttributes.expPack = "copper";
+        speakOutput = "Now who would you like to add it the experience too? You can pick between any of these characters; "+ charactersArray + '! Just say, use on then the characters name.';
+      }
+    } else if (experiencePack === "Silver" || experiencePack === "silver") {
+      if (!attributes.hasOwnProperty("silverXP") || attributes.silverXP === 0) {
+        speakOutput = "I am sorry you need to buy some experience packs. Is there anything else you would like to do like pick character to fight or look at your stats?";
+      } else {
+        sessionAttributes.expPack = "silver";
+        speakOutput = "Now who would you like to add it the experience too? You can pick between any of these characters; "+ charactersArray + '! Just say, use on then the characters name.';
+      }
+    } else if (experiencePack === "Gold" || experiencePack === "gold") {
+      if (!attributes.hasOwnProperty("goldXP") || attributes.goldXP === 0) {
+        speakOutput = "I am sorry you need to buy some experience packs. Is there anything else you would like to do like pick character to fight or look at your stats?";
+      } else {
+        sessionAttributes.expPack = "gold";
+        speakOutput = "Now who would you like to add it the experience too? You can pick between any of these characters; "+ charactersArray + '! Just say, use on then the characters name.';
+      }
+    }
+
+    return handlerInput.responseBuilder
+      .speak(helpers.speechPolly(speakOutput))
+      .reprompt()
+      .getResponse();
+  }
+};
+
+const UseExperienceOnCharacterPackHandler = {
+  canHandle(handlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === 'UseExperiencePackOnCharacter';
+  },
+  async handle(handlerInput) {
+    let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    var attributes = await getAttributes(handlerInput);
+    var character = handlerInput.requestEnvelope.request.intent.slots.UseOnCharacters.value;
+    sessionAttributes.previousIntent = sessionAttributes.currentIntent;
+    sessionAttributes.currentIntent = "useExperiencePack";
+
+    character = characterFilter(character);
+    character = helpers.capitalize_Words(character);
+    if(sessionAttributes.previousIntent === "useExperiencePack"){
+
+    }
+    if (sessionAttributes.expPack === "copper") {
+      if (attributes.hasOwnProperty("copperXP") || attributes.copperXP === 0) {
+        speakOutput = "I am sorry you need to buy some experience packs. Is there anything else you would like to do like pick character to fight or look at your stats?";
+      } else {
+        attributes.copperXP = parseInt(attributes.copperXP) - 1;
+        attributes.characters[character].charExp = parseInt(attributes.characters[character].charExp) + 200;
+        speakOutput = "I have added two hundred experience points to " + character + '! You have ' + attributes.copperXP + ' copper experience packs left'
+      }
+    } else if (sessionAttributes.expPack === "silver") {
+      if (!attributes.hasOwnProperty("silverXP") || attributes.silverXP === 0) {
+        speakOutput = "I am sorry you need to buy some experience packs. Is there anything else you would like to do like pick character to fight or look at your stats?";
+      } else {
+        attributes.silverXP = parseInt(attributes.silver) - 1;
+        attributes.characters[character].charExp = parseInt(attributes.characters[character].charExp) + 350;
+        speakOutput = "I have added three hundred and fifty experience points to " + character + '! You have ' + attributes.silverXP + ' silver experience packs left'
+      }
+    } else if (sessionAttributes.expPack === "gold") {
+      if (!attributes.hasOwnProperty("goldXP") || attributes.goldXP === 0) {
+        speakOutput = "I am sorry you need to buy some experience packs. Is there anything else you would like to do like pick character to fight or look at your stats?";
+      } else {
+        attributes.goldXP = parseInt(attributes.goldXP) - 1;
+        attributes.characters[character].charExp = parseInt(attributes.characters[character].charExp) + 500;
+        speakOutput = "I have added five hundred experience points to " + character + '! You have ' + attributes.goldXP + ' gold experience packs left';
+      }
+    }
+    await saveAttributes(handlerInput,attributes);
+    await levelingCharacter(handlerInput, character);
+    return handlerInput.responseBuilder
+      .speak(helpers.speechPolly(speakOutput))
+      .reprompt()
+      .getResponse();
+  }
+};
 
 const CloseMoveListHandler = {
   canHandle(handlerInput) {
@@ -664,31 +813,6 @@ const CloseMoveListHandler = {
   }
 };
 
-const YesNoIntentHandler = {
-  canHandle(handlerInput) {
-    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
-      ((Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent') ||
-        (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent'));
-  },
-  async handle(handlerInput) {
-    var attributes = await getAttributes(handlerInput);
-    console.log("<=== YESNO HANDLER ===>");
-    const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-    switch (sessionAttributes.previousIntent) {
-      case "ExpansionIntent":
-        if (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent') return CharactersSelectionScreenHandler.handle(handlerInput);
-        else {
-          attributes.firstExpansion = true;
-          await saveAttributes(handlerInput, attributes);
-          return CharactersSelectionScreenHandler.handle(handlerInput);
-        }
-        break;
-      default:
-        return ErrorHandler.handle(handlerInput);
-
-    }
-  }
-};
 const GetListofISPsHandler = {
   canHandle(handlerInput) {
     return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
@@ -698,23 +822,21 @@ const GetListofISPsHandler = {
     var speakOutput;
     const locale = handlerInput.requestEnvelope.request.locale;
     const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
-
+    const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    sessionAttributes.previousIntent = sessionAttributes.currentIntent;
+    sessionAttributes.currentIntent = "listOfISPs";
     return ms.getInSkillProducts(locale)
       .then(async function checkForProductAccess(result) {
-
-          // const expansion = result.inSkillProducts.find(record => record.referenceName === "ExpansionPack1");
           const products = getAllProducts(result.inSkillProducts);
           if (products && products.length > 0) {
-            // Customer owns one or more products
             console.log("GET SKILL PRODUCTS------>>>>>" + JSON.stringify(getSpeakableListOfProducts(products)));
-            speakOutput = "The following are available for purchase: " + getSpeakableListOfProducts(products) + '. To purchase any of the products just say I want to buy, than the product name.';
+            speakOutput = "The following are available for purchase: " + getSpeakableListOfProducts(products) + '. To purchase any of the products just say I want to buy, then the product name.';
             return handlerInput.responseBuilder
               .speak(helpers.speechPolly(speakOutput))
               .reprompt()
               .getResponse();
           }
           speakOutput = "I am sorry you have all the products purchased, please come back tomorrow to see if there are any new one's to buy.";
-          // Not entitled to anything yet.
           console.log('No entitledProducts');
           return handlerInput.responseBuilder
             .speak(helpers.speechPolly(speakOutput))
@@ -743,37 +865,39 @@ const ExpansionIntentHandler = {
     sessionAttributes.currentIntent = "BuyIntent";
     var speakOutput = "";
 
-    if (!attributes.hasOwnProperty("firstExpansion")) {
+    const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
+    const locale = handlerInput.requestEnvelope.request.locale;
+    console.log("GET SKILL PRODUCTS------>>>>>" + JSON.stringify(ms.getInSkillProducts(locale)));
+    var productName = handlerInput.requestEnvelope.request.intent.slots.ProductName.value;
 
-      const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
-      const locale = handlerInput.requestEnvelope.request.locale;
-      console.log("GET SKILL PRODUCTS------>>>>>" + JSON.stringify(ms.getInSkillProducts(locale)));
-      return await ms.getInSkillProducts(locale).then(async function checkForProductAccess(result) {
-        const expansion = result.inSkillProducts.find(record => record.referenceName === "ExpansionPack1");
+    return await ms.getInSkillProducts(locale).then(async function checkForProductAccess(result) {
+      var theProduct;
+      var upsellMessage;
+      if (productName === "Copper Experience Pack" || productName === "copper pack" || productName === "copper" || productName === "copper pack") {
+        upsellMessage = "The Copper Experience pack is one out of three expierence packs that you can buy, would you like to know more?";
+        theProduct = result.inSkillProducts.find(record => record.referenceName === "CopperXP");
+      } else if (productName === "Silver Experience Pack" || productName === "silver pack" || productName === "silver" || productName === "silver pack") {
+        upsellMessage = "The Silver Experience pack is one out of three expierence packs that you can buy, would you like to know more?";
+        theProduct = result.inSkillProducts.find(record => record.referenceName === "SilverXP");
+      } else if (productName === "Gold Experience Pack" || productName === "gold pack" || productName === "gold" || productName === "gold pack") {
+        upsellMessage = "The Gold Experience pack is one out of three expierence packs that you can buy, would you like to know more?";
+        theProduct = result.inSkillProducts.find(record => record.referenceName === "GoldXP");
+      }
 
-        var upsellMessage = "You have not purchased the first expansion pack, would you like to know more?";
-
-        return handlerInput.responseBuilder
-          .addDirective({
-            "type": "Connections.SendRequest",
-            "name": "Upsell",
-            "payload": {
-              "InSkillProduct": {
-                "productId": expansion.productId
-              },
-              "upsellMessage": upsellMessage
-            },
-            "token": "correlationToken"
-          })
-          .getResponse();
-      });
-    } else {
-      speakOutput = "I am sorry you alreay purchased the first expansion, please wait for use to make another.";
       return handlerInput.responseBuilder
-        .speak(helpers.speechPolly(speakOutput))
-        .reprompt(helpers.speechPolly(speakOutput))
+        .addDirective({
+          "type": "Connections.SendRequest",
+          "name": "Upsell",
+          "payload": {
+            "InSkillProduct": {
+              "productId": theProduct.productId
+            },
+            "upsellMessage": upsellMessage
+          },
+          "token": "correlationToken"
+        })
         .getResponse();
-    }
+    });
   }
 };
 
@@ -791,18 +915,45 @@ const SuccessfulPurchaseResponseHandler = {
     const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
     const productId = handlerInput.requestEnvelope.request.payload.productId;
     var attributes = await getAttributes(handlerInput);
+    var speakOutput;
     return ms.getInSkillProducts(locale).then(async function (res) {
       let product = res.inSkillProducts.find(record => record.productId == productId);
+      console.log("IN SUCCESS---->>>> " + JSON.stringify(product));
+      if (!attributes.hasOwnProperty("copperXP")) {
+        attributes.copperXP = 0;
+      }
+      if (!attributes.hasOwnProperty("silverXP")) {
+        attributes.silverXP = 0;
+      }
+      if (!attributes.hasOwnProperty("goldXP")) {
+        attributes.goldXP = 0;
+      }
       if (product != undefined) {
-        if (product.referenceName === "ExpansionPack1") {
-          attributes.firstExpansion = true;
+        if (product.referenceName === "CopperXP") {
+          attributes.copperXP += 5;
+          console.log("IN COPPER" + attributes.copperXP);
           await saveAttributes(handlerInput, attributes);
-          return CharactersSelectionScreenHandler.handle(handlerInput);
+          sessionAttributes.previousIntent = sessionAttributes.currentIntent;
+          sessionAttributes.currentIntent = "CopperXP";
+          return LaunchRequestHandler.handle(handlerInput);
+        } else if (product.referenceName === "SilverXP") {
+          attributes.silverXP += 5;
+          sessionAttributes.previousIntent = sessionAttributes.currentIntent;
+          sessionAttributes.currentIntent = "SilverXP";
+          await saveAttributes(handlerInput, attributes);
+          return LaunchRequestHandler.handle(handlerInput);
+
+        } else if (product.referenceName === "GoldXP") {
+          attributes.goldXP += 5;
+          sessionAttributes.previousIntent = sessionAttributes.currentIntent;
+          sessionAttributes.currentIntent = "GoldXP";
+          await saveAttributes(handlerInput, attributes);
+          return LaunchRequestHandler.handle(handlerInput);
+
         }
-
-
       }
     });
+
   }
 };
 
@@ -814,7 +965,6 @@ const ErrorPurchaseResponseHandler = {
   },
   async handle(handlerInput) {
     console.log("<=== ErrorPurchaseResponse HANDLER ===>");
-    //TODO: add launch request verbage
 
     return LaunchRequestHandler.handle(handlerInput);
   }
@@ -838,7 +988,6 @@ const UnsuccessfulPurchaseResponseHandler = {
       let product = res.inSkillProducts.find(record => record.productId == productId);
 
       if (product != undefined) {
-        //TODO: add launch request verbage
         return LaunchRequestHandler.handle(handlerInput);
       }
     });
@@ -854,8 +1003,8 @@ const HelpIntentHandler = {
     const speakOutput = 'You can say hello to me! How can I help?';
 
     return handlerInput.responseBuilder
-      .speak(speakOutput)
-      .reprompt(speakOutput)
+      .speak(helpers.speechPolly(speakOutput))
+      .reprompt(helpers.speechPolly(speakOutput))
       .getResponse();
   }
 };
@@ -868,7 +1017,7 @@ const CancelAndStopIntentHandler = {
   handle(handlerInput) {
     const speakOutput = 'Goodbye!';
     return handlerInput.responseBuilder
-      .speak(speakOutput)
+      .speak(helpers.speechPolly(speakOutput))
       .getResponse();
   }
 };
@@ -893,7 +1042,7 @@ const IntentReflectorHandler = {
     const speakOutput = `You just triggered ${intentName}`;
 
     return handlerInput.responseBuilder
-      .speak(speakOutput)
+      .speak(helpers.speechPolly(speakOutput))
       .getResponse();
   }
 };
@@ -906,6 +1055,23 @@ const ErrorHandler = {
   handle(handlerInput, error) {
     console.log(`~~~~ Error handled: ${error.stack}`);
     const speakOutput = `Sorry, I had trouble doing what you asked. Please try again.`;
+
+    return handlerInput.responseBuilder
+      .speak(helpers.speechPolly(speakOutput))
+      .reprompt(helpers.speechPolly(speakOutput))
+      .getResponse();
+  }
+};
+const FallbackIntentHandler = {
+  canHandle(handlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.FallbackIntent';
+  },
+  handle(handlerInput) {
+    console.log("<=== FALLBACKINTENT HANDLER ===>");
+    const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    sessionAttributes.previousAction = "AMAZON.FallbackIntent";
+    const speakOutput = "Fallback Intent";
 
     return handlerInput.responseBuilder
       .speak(speakOutput)
@@ -956,11 +1122,13 @@ exports.handler = Alexa.SkillBuilders.custom()
     YourStatsHandler,
     YourStandingsHandler,
     GetListofISPsHandler,
-    YesNoIntentHandler,
     ExpansionIntentHandler,
+    UseExperiencePackHandler,
+    UseExperienceOnCharacterPackHandler,
     SuccessfulPurchaseResponseHandler,
     UnsuccessfulPurchaseResponseHandler,
     ErrorPurchaseResponseHandler,
+    FallbackIntentHandler,
     HelpIntentHandler,
     CancelAndStopIntentHandler,
     SessionEndedRequestHandler,
@@ -1034,11 +1202,15 @@ characterSelector = async (handlerInput, characters, character) => {
     } else if (attributes.characters[character].score <= 100) {
       attributes.characters[character].score = 100;
     }
-
-    await saveAttributes(handlerInput, attributes);
     sessionAttributes.player = findCharacterInData(characters, character);
     sessionAttributes.playerPower = character;
     sessionAttributes.playersHealth = 200;
+    if (!attributes.characters[character].hasOwnProperty("charURL")) {
+      attributes.characters[character].charURL = sessionAttributes.player.PWR_IMG;
+    }
+
+    await saveAttributes(handlerInput, attributes);
+
   } else if (!sessionAttributes.enemyPower) {
     if (!sessionAttributes.hasOwnProperty('computer')) {
       sessionAttributes.computer = {};
@@ -1085,7 +1257,8 @@ findCharacterInData = (characters, character) => {
     i++;
   }
 };
-findMoveInData = (player, move) => {
+findMoveInData = async (handlerInput, player, move) => {
+  var attributes = await getAttributes(handlerInput);
   var moveStats;
   if (player.ATK_LT_COMBO === move) {
     moveStats = {
@@ -1128,40 +1301,40 @@ findMoveInData = (player, move) => {
   }
 };
 
-fightingPlayer = (handlerInput, move) => {
+fightingPlayer = async(handlerInput, move) => {
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   if (move === "use power move" || move === "power move") return;
   var player = sessionAttributes.player;
-  var moveData = findMoveInData(player, move);
+  var moveData = findMoveInData(handlerInput, player, move);
   console.log("IN FIGHTING PLAYER FUNCTION ---->>>>" + JSON.stringify(moveData));
   var didTheyDodge = dodgeRating(moveData);
   if (didTheyDodge) {
     sessionAttributes.didCompDodge = didTheyDodge;
   } else {
     sessionAttributes.didCompDodge = false;
-    health(handlerInput, "player", moveData);
+   await health(handlerInput, "player", moveData);
   }
   sessionAttributes.playerMoveData = moveData;
-
-  if (sessionAttributes.compPowerAttackAvail === false || !sessionAttributes.compPowerAttackAvail) {
-    fightingComputer(handlerInput);
-    powersAttackMove(handlerInput, "player");
+  powersAttackMove(handlerInput, "player");
+  if (sessionAttributes.compPowerAttackAvail === false) {
+    await fightingComputer(handlerInput);
   } else return;
 
 
 };
 
-fightingComputer = (handlerInput) => {
+fightingComputer = async (handlerInput) => {
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+  if (sessionAttributes.compPowerAttackAvail === true) return;
   var computer = sessionAttributes.computer;
   var compMove = randomizeComputerAttack(computer);
-  var moveData = findMoveInData(computer, compMove);
+  var moveData = findMoveInData(handlerInput, computer, compMove);
   var didTheyDodge = dodgeCompRating(moveData);
   if (didTheyDodge) {
     sessionAttributes.didPlayerDodge = didTheyDodge;
   } else {
     sessionAttributes.didPlayerDodge = false;
-    health(handlerInput, "computer", moveData);
+   await health(handlerInput, "computer", moveData);
   }
   sessionAttributes.computerMoveData = moveData;
   powersAttackMove(handlerInput, "computer");
@@ -1173,22 +1346,27 @@ playerBlocked = (handlerInput, move) => {
   }
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   var compMove = randomizeComputerAttack(sessionAttributes.computer);
-  var moveCompData = findMoveInData(sessionAttributes.computer, compMove);
-  var moveData = findMoveInData(sessionAttributes.player, move);
+  var moveCompData = findMoveInData(handlerInput, sessionAttributes.computer, compMove);
+  var moveData = findMoveInData(handlerInput, sessionAttributes.player, move);
   let theDodgeRating = moveData.DodgeRating;
   let randomNumberTen = Math.floor(Math.random() * (5 * 100 - 1 * 100) + 1 * 100) / (1 * 100);
   var blockDamage = moveData.Damage;
   var damageTook = (moveCompData.Damage - (moveCompData.Damage * 0.85));
-  sessionAttributes.computersHealth -= blockDamage;
-  sessionAttributes.playersHealth -= damageTook.toFixed();
+  sessionAttributes.computersHealth -= parseInt(blockDamage);
+  sessionAttributes.playersHealth -= parseInt(damageTook.toFixed());
   if (theDodgeRating >= randomNumberTen) {
     return "You activated, " + moveData.Name + " since you blocked their attack you did " + blockDamage + " points of damage, but you still took " + damageTook.toFixed() + " points of damage. Keep Fighting!";
   }
 };
-health = (handlerInput, whosTurn, moveData) => {
+health = async (handlerInput, whosTurn, moveData) => {
+  var attributes = await getAttributes(handlerInput);
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   if (whosTurn === "player") {
-    sessionAttributes.computersHealth = (parseInt(sessionAttributes.computersHealth) - parseInt(moveData.Damage));
+    if (attributes.chacters[sessionAttributes.playerPower].hasOwnProperty("attackDamageIncrease")) {
+    sessionAttributes.computersHealth = (parseInt(sessionAttributes.computersHealth) - (parseInt(moveData.Damage) * parseInt(attributes.characters[sessionAttributes.playerPower].attackDamageIncrease)));
+    }else{
+      sessionAttributes.computersHealth = (parseInt(sessionAttributes.computersHealth) - parseInt(moveData.Damage));
+    }
   } else if (whosTurn === "computer") {
     sessionAttributes.playersHealth = (parseInt(sessionAttributes.playersHealth) - parseInt(moveData.Damage));
   }
@@ -1260,7 +1438,7 @@ usePowerAttack = (handlerInput, player, whosTurn) => {
 healthBar = (handlerInput) => {
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   if (sessionAttributes.playersHealth > 100) {
-    var barOne = sessionAttributes.playersHealth - 100;
+    var barOne = 100 - sessionAttributes.computerMoveData.Damage;
     sessionAttributes.playersBarOne = barOne + "%";
     sessionAttributes.playersBarTwo = "100%";
   } else {
@@ -1269,7 +1447,7 @@ healthBar = (handlerInput) => {
     sessionAttributes.playersBarTwo = barTwo + "%";
   }
   if (sessionAttributes.computersHealth > 100) {
-    var barCompOne = sessionAttributes.computersHealth - 100;
+    var barCompOne = 100 - sessionAttributes.playerMoveData.Damage;
     sessionAttributes.computersBarOne = barCompOne + "%";
     sessionAttributes.computersBarTwo = "100%";
   } else {
@@ -1281,18 +1459,32 @@ healthBar = (handlerInput) => {
 
 theEnd = async (handlerInput) => {
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-
+  var attributes = await getAttributes(handlerInput);
+  if (!attributes.hasOwnProperty("stats")) {
+    attributes.stats = {};
+  }
+  if (!attributes.stats.hasOwnProperty("wins")) {
+    attributes.stats.wins = 0;
+  }
+  if (!attributes.stats.hasOwnProperty("losses")) {
+    attributes.stats.losses = 0;
+  }
+  if (!attributes.stats.hasOwnProperty("ties")) {
+    attributes.stats.ties = 0;
+  }
   if (sessionAttributes.computersHealth <= 0 && sessionAttributes.playersHealth <= 0) {
     sessionAttributes.playerWin = false;
     sessionAttributes.computerWin = false;
-    sessionAttributes.stats.ties += 1;
+    attributes.stats.ties += 1;
   } else if (sessionAttributes.computersHealth <= 0) {
     sessionAttributes.computerWin = false;
-    sessionAttributes.stats.wins += 1;
+    attributes.stats.wins += 1;
+    await levelingCharacter(handlerInput,sessionAttributes.playerPower);
   } else if (sessionAttributes.playersHealth <= 0) {
-    sessionAttributes.stats.losses += 1;
+    attributes.stats.losses += 1;
     sessionAttributes.playerWin = false;
   }
+  await saveAttributes(handlerInput, attributes);
   await calculateStats(handlerInput);
 
 };
@@ -1307,7 +1499,7 @@ moveList = (handlerInput) => {
   let hvCombo = sessionAttributes.player.ATK_HV_COMBO;
   let hvName2 = sessionAttributes.player.ATK_HV_NAME2;
   let hvCombo2 = sessionAttributes.player.ATK_HV_COMBO2;
-  var theList = `<b>${ltName}</b>: ${ltCombo} <br><b>${ltName2}</b>: ${ltCombo2} <br><b>${hvName}</b>: ${hvCombo} <br><b>${hvName2}</b>: ${hvCombo2}`;
+  var theList = `<b>${ltName}</b>: ${ltCombo} <br><b>${ltName2}</b>: ${ltCombo2} <br><b>${hvName}</b>: ${hvCombo} <br><b>${hvName2}</b>: ${hvCombo2}<br>Dodge: dodge`;
   return theList;
 };
 moveListSpeak = (handlerInput) => {
@@ -1320,7 +1512,7 @@ moveListSpeak = (handlerInput) => {
   let hvCombo = sessionAttributes.player.ATK_HV_COMBO;
   let hvName2 = sessionAttributes.player.ATK_HV_NAME2;
   let hvCombo2 = sessionAttributes.player.ATK_HV_COMBO2;
-  var theList = `The move list for ${sessionAttributes.player.Name} is the following: ${ltName}:<break strength="strong"/> ${ltCombo}; ${ltName2}:<break strength="strong"/> ${ltCombo2}; ${hvName}:<break strength="strong"/> ${hvCombo}; ${hvName2}:<break strength="strong"/> ${hvCombo2}.`;
+  var theList = `The move list for ${sessionAttributes.player.Name} is the following: ${ltName}:<break strength="strong"/> ${ltCombo}; ${ltName2}:<break strength="strong"/> ${ltCombo2}; ${hvName}:<break strength="strong"/> ${hvCombo}; ${hvName2}:<break strength="strong"/> ${hvCombo2}. Lastly, you can also dodge.`;
   return theList;
 };
 
@@ -1332,17 +1524,15 @@ calculateStats = async (handlerInput) => {
   let charLevel;
   let charExp;
   if (!attributes.characters[playerCharacter].hasOwnProperty("charLevel")) {
-    charLevel = 1;
+    attributes.characters[playerCharacter].charLevel = 1;
   } else {
     charLevel = attributes.characters[playerCharacter].charLevel;
   }
   if (!attributes.characters[playerCharacter].hasOwnProperty("charExp")) {
-    charExp = 0;
+    attributes.characters[playerCharacter].charExp = 0;
   } else {
     charExp = attributes.characters[playerCharacter].charExp;
   }
-
-  levelingCharacter(handlerInput);
 
   let sessionStats = {
     "turns": sessionAttributes.turnCounter,
@@ -1352,14 +1542,17 @@ calculateStats = async (handlerInput) => {
     "computerCharacterCount": attributes.compCharacters[compCharacter].count,
     "rankingScore": attributes.characters[playerCharacter].score,
     "compRankingScore": attributes.compCharacters[compCharacter].score,
+    "wins": attributes.stats.wins,
+    "losses": attributes.stats.losses,
+    "ties": attributes.stats.ties
   };
   attributes.stats = sessionStats;
   await saveAttributes(handlerInput, attributes);
-  getStandings(handlerInput);
+  await getStandings(handlerInput);
 };
 
 getStandings = async (handlerInput) => {
-  const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+  var sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   let computer = sessionAttributes.computer;
   let player = sessionAttributes.player;
   var attributes = await getAttributes(handlerInput);
@@ -1372,100 +1565,104 @@ getStandings = async (handlerInput) => {
   await saveAttributes(handlerInput, attributes);
 };
 
-levelingCharacter = async (handlerInput) => {
+levelingCharacter = async (handlerInput,playerCharacter) => {
   const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   var attributes = await getAttributes(handlerInput);
-  let playerCharacter = sessionAttributes.player.Name;
   let charLevel = attributes.characters[playerCharacter].charLevel;
   let charExp = attributes.characters[playerCharacter].charExp;
-  switch (charExp) {
-    case charExp < 200:
-      charLevel = 1;
-      charExp += 100;
-      break;
-    case charExp >= 200 && charExp < 500:
-      charLevel = 2;
-      charExp += 125;
-      break;
-    case charExp >= 500 && charExp < 900:
-      charLevel = 3;
-      charExp += 150;
-      break;
-    case charExp >= 900 && charExp < 1400:
-      charExp += 175;
-      charLevel = 4;
-      break;
-    case charExp >= 1400 && charExp < 2000:
-      charExp += 200;
-      charLevel = 5;
-      break;
-    case charExp >= 2000 && charExp < 2700:
-      charExp += 200;
-      charLevel = 6;
-      break;
-    case charExp >= 2700 && charExp < 3500:
-      charExp += 225;
-      charLevel = 7;
-      break;
-    case charExp >= 3500 && charExp < 4400:
-      charExp += 250;
-      charLevel = 8;
-      break;
-    case charExp >= 4400 && charExp < 5400:
-      charExp += 275;
-      charLevel = 9;
-      break;
-    case charExp >= 5400 && charExp < 6500:
-      charExp += 300;
-      charLevel = 10;
-      break;
-    case charExp >= 6500 && charExp < 7700:
-      charExp += 300;
-      charLevel = 11;
-      break;
-    case charExp >= 7700 && charExp < 9000:
-      charExp += 325;
-      charLevel = 12;
-      break;
-    case charExp >= 9000 && charExp < 13000:
-      charExp += 350;
-      charLevel = 13;
-      break;
-    case charExp >= 13000 && charExp < 14500:
-      charExp += 375;
-      charLevel = 14;
-      break;
-    case charExp >= 14500 && charExp < 16100:
-      charExp += 400;
-      charLevel = 15;
-      break;
-    case charExp >= 16100 && charExp < 17800:
-      charExp += 400;
-      charLevel = 16;
-      break;
-    case charExp >= 17800 && charExp < 19600:
-      charExp += 425;
-      charLevel = 17;
-      break;
-    case charExp >= 19600 && charExp < 21500:
-      charExp += 450;
-      charLevel = 18;
-      break;
-    case charExp >= 21500 && charExp < 23500:
-      charExp += 475;
-      charLevel = 19;
-      break;
-    case charExp >= 23500:
-      charExp += 0;
-      charLevel = 20;
-      break;
-    default:
-      console.log("Invalid character experiance");
+
+  if (charExp < 200) {
+    charLevel = 1;
+    charExp += 100;
+    attackDamageIncrease = 1;
+  } else if (charExp >= 200 && charExp < 500) {
+    charLevel = 2;
+    charExp += 125;
+    attackDamageIncrease = 1.02;
+  } else if (charExp >= 500 && charExp < 900) {
+    charLevel = 3;
+    attackDamageIncrease = 1.03;
+    charExp += 150;
+  } else if (charExp >= 900 && charExp < 1400) {
+    charExp += 175;
+    charLevel = 4;
+    attackDamageIncrease = 1.04;
+  } else if (charExp >= 1400 && charExp < 2000) {
+    charExp += 200;
+    charLevel = 5;
+    attackDamageIncrease = 1.05;
+  } else if (charExp >= 2000 && charExp < 2700) {
+    charExp += 200;
+    charLevel = 6;
+    attackDamageIncrease = 1.06;
+  } else if (charExp >= 2700 && charExp < 3500) {
+    charExp += 225;
+    charLevel = 7;
+    attackDamageIncrease = 1.07;
+  } else if (charExp >= 3500 && charExp < 4400) {
+    charExp += 250;
+    charLevel = 8;
+    attackDamageIncrease = 1.08;
+  } else if (charExp >= 4400 && charExp < 5400) {
+    charExp += 275;
+    charLevel = 9;
+    attackDamageIncrease = 1.09;
+  } else if (charExp >= 5400 && charExp < 6500) {
+    charExp += 300;
+    charLevel = 10;
+    attackDamageIncrease = 1.10;
+  } else if (charExp >= 6500 && charExp < 7700) {
+    charExp += 300;
+    charLevel = 11;
+    attackDamageIncrease = 1.11;
+  } else if (charExp >= 7700 && charExp < 9000) {
+    charExp += 325;
+    charLevel = 12;
+    attackDamageIncrease = 1.12;
+  } else if (charExp >= 9000 && charExp < 13000) {
+    charExp += 350;
+    charLevel = 13;
+    attackDamageIncrease = 1.13;
+  } else if (charExp >= 13000 && charExp < 14500) {
+    charExp += 375;
+    charLevel = 14;
+    attackDamageIncrease = 1.14;
+  } else if (charExp >= 14500 && charExp < 16100) {
+    charExp += 400;
+    charLevel = 15;
+    attackDamageIncrease = 1.15;
+  } else if (charExp >= 16100 && charExp < 17800) {
+    charExp += 400;
+    charLevel = 16;
+    attackDamageIncrease = 1.16;
+  } else if (charExp >= 17800 && charExp < 19600) {
+    charExp += 425;
+    charLevel = 17;
+    attackDamageIncrease = 1.17;
+  } else if (charExp >= 19600 && charExp < 21500) {
+    charExp += 450;
+    charLevel = 18;
+    attackDamageIncrease = 1.18;
+  } else if (charExp >= 21500 && charExp < 23500) {
+    charExp += 475;
+    charLevel = 19;
+    attackDamageIncrease = 1.19;
+  } else if (charExp >= 23500) {
+    charExp += 0;
+    charLevel = 20;
+    attackDamageIncrease = 1.20;
+  } else {
+    console.log("Invalid character experience points");
+  }
+  if (!attributes.characters[playerCharacter].hasOwnProperty("attackDamageIncrease")) {
+    attributes.characters[playerCharacter].attackDamageIncrease = 1;
+  } else {
+    attributes.characters[playerCharacter].attackDamageIncrease = attackDamageIncrease;
   }
   attributes.characters[playerCharacter].Name = playerCharacter;
   attributes.characters[playerCharacter].charExp = charExp;
   attributes.characters[playerCharacter].charLevel = charLevel;
-  saveAttributes(handlerInput, attributes);
+  await saveAttributes(handlerInput, attributes);
 
 };
 
@@ -1500,578 +1697,27 @@ var backgroundImage = ["https://powers.s3.amazonaws.com/maarten-van-den-heuvel-S
 
 statsData = async (handlerInput) => {
   const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-  var charCount = {};
   var attributes = await getAttributes(handlerInput);
-
-  var highest = _.max(Object.keys(attributes.characters), function (o) {
-    return attributes.characters[o];
-  });
-  var score = attributes.characters[highest].score;
-  console.log("HIGHEST----->>>>" +JSON.stringify(highest));
-  var charUrl;
-  for(var i=0; sessionAttributes.characterRecords[i].fields.Name === highest; i++){
-    charUrl = sessionAttributes.characterRecords[i].fields.PWR_IMG;
-  }console.log(charUrl);
-  var stats = {
-    "topCharacter": highest,
-    "score": "Your highest score with: " +highest+" is " +score+".<br> ",
-    "statString": "Your total wins, losses and ties <br>Wins: " + attributes.stats.wins + "<br>" +
-                  "Losses: " +attributes.stats.losses + "<br>Ties: " + attributes.stats.ties,
-    "charURL":charUrl,
-    "speakOutput":"Your highest score with: " +highest+" is " +score+". Your total wins, losses and ties; Wins: " + attributes.stats.wins +
-    "Losses: " +attributes.stats.losses + "Ties: " + attributes.stats.ties
-  };
-  return stats;
-};
-
-
-powersListExpansionData = (handlerInput) => {
-  const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-  var attributes = getAttributes(handlerInput);
-  var characterRecords = sessionAttributes.characterRecords;
-
-  var charLevel = [];
-  for (var i = 0; i >= characterRecords.length;) {
-    if (attributes.characters[i].Name == characterRecords[i].fields.Name) {
-      if (attributes.characters[i].charLevel > 1) {
-        charLevel.push(attributes.characters[i].charLevel);
-      }
-    } else {
-      charLevel.push(1);
+  var countObj = {};
+  for (var i in attributes.characters) {
+    if (attributes.characters[i].hasOwnProperty("count")) {
+      countObj[i] = attributes.characters[i].count;
     }
-    i++;
   }
 
-  var theListData = {
-    "listTemplate2Metadata": {
-      "type": "object",
-      "objectId": "lt1Metadata",
-      "backgroundImage": {
-        "contentDescription": null,
-        "smallSourceUrl": null,
-        "largeSourceUrl": null,
-        "sources": [{
-            "url": "https://powers.s3.amazonaws.com/arches-architecture-art-baroque-316080.jpg",
-            "size": "small",
-            "widthPixels": 0,
-            "heightPixels": 0
-          },
-          {
-            "url": "https://powers.s3.amazonaws.com/arches-architecture-art-baroque-316080.jpg",
-            "size": "large",
-            "widthPixels": 0,
-            "heightPixels": 0
-          }
-        ]
-      },
-      "title": "Select your Power Character",
-      "logoUrl": "https://d2o906d8ln7ui1.cloudfront.net/images/cheeseskillicon.png"
-    },
-    "listTemplate2ListData": {
-      "type": "list",
-      "listId": "lt2Sample",
-      "totalNumberOfItems": 9,
-      "hintText": "Tap on your character or Say their name.",
-      "listPage": {
-        "listItems": [{
-            "listItemIdentifier": "Lillith",
-            "ordinalNumber": 1,
-            "textContent": {
-              "primaryText": {
-                "type": "PlainText",
-                "text": "Lillith"
-              },
-              "secondaryText": {
-                "type": "PlainText",
-                "text": "Power: Poison Spray"
-              },
-              "thirdText": {
-                "type": "PlainText",
-                "text": charLevel[0]
-              }
-            },
-            "image": {
-              "contentDescription": null,
-              "smallSourceUrl": null,
-              "largeSourceUrl": null,
-              "sources": [{
-                  "url": "https://powers.s3.amazonaws.com/samy-saadi-fFC7IOFT-OM-unsplash.jpg",
-                  "size": "small",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                },
-                {
-                  "url": "https://powers.s3.amazonaws.com/samy-saadi-fFC7IOFT-OM-unsplash.jpg",
-                  "size": "large",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                }
-              ]
-            },
-            "image2": {
-              "contentDescription": null,
-              "smallSourceUrl": null,
-              "largeSourceUrl": null,
-              "sources": [{
-                  "url": "https://powers.s3.amazonaws.com/Lillith.png",
-                  "size": "small",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                },
-                {
-                  "url": "https://powers.s3.amazonaws.com/Lillith.png",
-                  "size": "large",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                }
-              ]
-            },
-            "token": "Lillith"
-          },
-          {
-            "listItemIdentifier": "Randell",
-            "ordinalNumber": 2,
-            "textContent": {
-              "primaryText": {
-                "type": "PlainText",
-                "text": "Randell"
-              },
-              "secondaryText": {
-                "type": "PlainText",
-                "text": "Power: Bone Breaker"
-              },
-              "thirdText": {
-                "type": "PlainText",
-                "text": charLevel[1]
-              }
-            },
-            "image": {
-              "contentDescription": null,
-              "smallSourceUrl": null,
-              "largeSourceUrl": null,
-              "sources": [{
-                  "url": "https://powers.s3.amazonaws.com/omid-armin-2GHCdtW45Uw-unsplash.jpg",
-                  "size": "small",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                },
-                {
-                  "url": "https://powers.s3.amazonaws.com/omid-armin-2GHCdtW45Uw-unsplash.jpg",
-                  "size": "large",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                }
-              ]
-            },
-            "image2": {
-              "contentDescription": null,
-              "smallSourceUrl": null,
-              "largeSourceUrl": null,
-              "sources": [{
-                  "url": "https://powers.s3.amazonaws.com/Randell.png",
-                  "size": "small",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                },
-                {
-                  "url": "https://powers.s3.amazonaws.com/Randell.png",
-                  "size": "large",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                }
-              ]
-            },
-            "token": "Randell"
-          },
-          {
-            "listItemIdentifier": "Charity",
-            "ordinalNumber": 3,
-            "textContent": {
-              "primaryText": {
-                "type": "PlainText",
-                "text": "Charity"
-              },
-              "secondaryText": {
-                "type": "PlainText",
-                "text": "Power: Heel Stomp"
-              },
-              "thirdText": {
-                "type": "PlainText",
-                "text": charLevel[2]
-              }
-            },
-            "image": {
-              "contentDescription": null,
-              "smallSourceUrl": null,
-              "largeSourceUrl": null,
-              "sources": [{
-                  "url": "https://powers.s3.amazonaws.com/efe-kurnaz-RnCPiXixooY-unsplash.jpg",
-                  "size": "small",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                },
-                {
-                  "url": "https://powers.s3.amazonaws.com/efe-kurnaz-RnCPiXixooY-unsplash.jpg",
-                  "size": "large",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                }
-              ]
-            },
-            "image2": {
-              "contentDescription": null,
-              "smallSourceUrl": null,
-              "largeSourceUrl": null,
-              "sources": [{
-                  "url": "https://powers.s3.amazonaws.com/Charity.png",
-                  "size": "small",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                },
-                {
-                  "url": "https://powers.s3.amazonaws.com/Charity.png",
-                  "size": "large",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                }
-              ]
-            },
-            "token": "Charity"
-          },
-          {
-            "listItemIdentifier": "SharpieSharp",
-            "ordinalNumber": 4,
-            "textContent": {
-              "primaryText": {
-                "type": "PlainText",
-                "text": "Sharpie Sharp"
-              },
-              "secondaryText": {
-                "type": "PlainText",
-                "text": "Power: Spike Throw"
-              },
-              "thirdText": {
-                "type": "PlainText",
-                "text": charLevel[3]
-              }
-            },
-            "image": {
-              "contentDescription": null,
-              "smallSourceUrl": null,
-              "largeSourceUrl": null,
-              "sources": [{
-                  "url": "https://powers.s3.amazonaws.com/matteo-di-iorio-wkMd_DylG8I-unsplash.jpg",
-                  "size": "small",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                },
-                {
-                  "url": "https://powers.s3.amazonaws.com/matteo-di-iorio-wkMd_DylG8I-unsplash.jpg",
-                  "size": "large",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                }
-              ]
-            },
-            "image2": {
-              "contentDescription": null,
-              "smallSourceUrl": null,
-              "largeSourceUrl": null,
-              "sources": [{
-                  "url": "https://powers.s3.amazonaws.com/SharpySharp.png",
-                  "size": "small",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                },
-                {
-                  "url": "https://powers.s3.amazonaws.com/SharpySharp.png",
-                  "size": "large",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                }
-              ]
-            },
-            "token": "Sharpie Sharp"
-          },
-          {
-            "listItemIdentifier": "LarsThundersquat",
-            "ordinalNumber": 5,
-            "textContent": {
-              "primaryText": {
-                "type": "PlainText",
-                "text": "Lars Thundersquat"
-              },
-              "secondaryText": {
-                "type": "PlainText",
-                "text": "Power: Thigh Crusher"
-              },
-              "thirdText": {
-                "type": "PlainText",
-                "text": charLevel[4]
-              }
-            },
-            "image": {
-              "contentDescription": null,
-              "smallSourceUrl": null,
-              "largeSourceUrl": null,
-              "sources": [{
-                  "url": "https://powers.s3.amazonaws.com/michael-shannon-iIrB37J5yfA-unsplash.jpg",
-                  "size": "small",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                },
-                {
-                  "url": "https://powers.s3.amazonaws.com/michael-shannon-iIrB37J5yfA-unsplash.jpg",
-                  "size": "large",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                }
-              ]
-            },
-            "image2": {
-              "contentDescription": null,
-              "smallSourceUrl": null,
-              "largeSourceUrl": null,
-              "sources": [{
-                  "url": "https://powers.s3.amazonaws.com/LarsThundersquat.png",
-                  "size": "small",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                },
-                {
-                  "url": "https://powers.s3.amazonaws.com/LarsThundersquat.png",
-                  "size": "large",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                }
-              ]
-            },
-            "token": "Lars Thundersquat"
-          },
-          {
-            "listItemIdentifier": "Edge",
-            "ordinalNumber": 6,
-            "textContent": {
-              "primaryText": {
-                "type": "PlainText",
-                "text": "Edge"
-              },
-              "secondaryText": {
-                "type": "PlainText",
-                "text": "Power: Speed Attack"
-              },
-              "thirdText": {
-                "type": "PlainText",
-                "text": charLevel[5]
-              }
-            },
-            "image": {
-              "contentDescription": null,
-              "smallSourceUrl": null,
-              "largeSourceUrl": null,
-              "sources": [{
-                  "url": "https://powers.s3.amazonaws.com/deglee-degi-wQImoykAwGs-unsplash.jpg",
-                  "size": "small",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                },
-                {
-                  "url": "https://powers.s3.amazonaws.com/deglee-degi-wQImoykAwGs-unsplash.jpg",
-                  "size": "large",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                }
-              ]
-            },
-            "image2": {
-              "contentDescription": null,
-              "smallSourceUrl": null,
-              "largeSourceUrl": null,
-              "sources": [{
-                  "url": "https://powers.s3.amazonaws.com/Edge.png",
-                  "size": "small",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                },
-                {
-                  "url": "https://powers.s3.amazonaws.com/Edge.png",
-                  "size": "large",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                }
-              ]
-            },
-            "token": "Edge"
-          },
-          {
-            "listItemIdentifier": "Argus",
-            "ordinalNumber": 7,
-            "textContent": {
-              "primaryText": {
-                "type": "PlainText",
-                "text": "Argus"
-              },
-              "secondaryText": {
-                "type": "PlainText",
-                "text": "Power: Hand Beam Cannons"
-              },
-              "thirdText": {
-                "type": "PlainText",
-                "text": charLevel[6]
-              }
-            },
-            "image": {
-              "contentDescription": null,
-              "smallSourceUrl": null,
-              "largeSourceUrl": null,
-              "sources": [{
-                  "url": "https://powers.s3.amazonaws.com/david-bruyndonckx-F_hft1Wiyj8-unsplash.jpg",
-                  "size": "small",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                },
-                {
-                  "url": "https://powers.s3.amazonaws.com/david-bruyndonckx-F_hft1Wiyj8-unsplash.jpg",
-                  "size": "large",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                }
-              ]
-            },
-            "image2": {
-              "contentDescription": null,
-              "smallSourceUrl": null,
-              "largeSourceUrl": null,
-              "sources": [{
-                  "url": "https://powers.s3.amazonaws.com/Argus.png",
-                  "size": "small",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                },
-                {
-                  "url": "https://powers.s3.amazonaws.com/Argus.png",
-                  "size": "large",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                }
-              ]
-            },
-            "token": "Argus"
-          },
-          {
-            "listItemIdentifier": "Karrigan",
-            "ordinalNumber": 8,
-            "textContent": {
-              "primaryText": {
-                "type": "PlainText",
-                "text": "Karrigan"
-              },
-              "secondaryText": {
-                "type": "PlainText",
-                "text": "Power: Stone Throw"
-              },
-              "thirdText": {
-                "type": "PlainText",
-                "text": charLevel[7]
-              }
-            },
-            "image": {
-              "contentDescription": null,
-              "smallSourceUrl": null,
-              "largeSourceUrl": null,
-              "sources": [{
-                  "url": "https://powers.s3.amazonaws.com/carles-rabada-gwwWhABtohs-unsplash.jpg",
-                  "size": "small",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                },
-                {
-                  "url": "https://powers.s3.amazonaws.com/carles-rabada-gwwWhABtohs-unsplash.jpg",
-                  "size": "large",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                }
-              ]
-            },
-            "image2": {
-              "contentDescription": null,
-              "smallSourceUrl": null,
-              "largeSourceUrl": null,
-              "sources": [{
-                  "url": "https://powers.s3.amazonaws.com/Karrigan.png",
-                  "size": "small",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                },
-                {
-                  "url": "https://powers.s3.amazonaws.com/Karrigan.png",
-                  "size": "large",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                }
-              ]
-            },
-            "token": "Karrigan"
-          },
-          {
-            "listItemIdentifier": "ElectricMean",
-            "ordinalNumber": 9,
-            "textContent": {
-              "primaryText": {
-                "type": "PlainText",
-                "text": "Electric Mean"
-              },
-              "secondaryText": {
-                "type": "PlainText",
-                "text": "Power: Heel Stomp"
-              },
-              "thirdText": {
-                "type": "PlainText",
-                "text": charLevel[8]
-              }
-            },
-            "image": {
-              "contentDescription": null,
-              "smallSourceUrl": null,
-              "largeSourceUrl": null,
-              "sources": [{
-                  "url": "https://powers.s3.amazonaws.com/maarten-van-den-heuvel-Siuwr3uCir0-unsplash.jpg",
-                  "size": "small",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                },
-                {
-                  "url": "https://powers.s3.amazonaws.com/maarten-van-den-heuvel-Siuwr3uCir0-unsplash.jpg",
-                  "size": "large",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                }
-              ]
-            },
-            "image2": {
-              "contentDescription": null,
-              "smallSourceUrl": null,
-              "largeSourceUrl": null,
-              "sources": [{
-                  "url": "https://powers.s3.amazonaws.com/ElectricMean.png",
-                  "size": "small",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                },
-                {
-                  "url": "https://powers.s3.amazonaws.com/ElectricMean.png",
-                  "size": "large",
-                  "widthPixels": 0,
-                  "heightPixels": 0
-                }
-              ]
-            },
-            "token": "Electric Mean"
-          }
-        ]
-      }
-    }
+  var highest = _.max(Object.keys(countObj), function (o) {
+    return countObj[o];
+  });
+  var score = attributes.characters[highest].score;
+  var charUrl = attributes.characters[highest].charURL;
+  var stats = {
+    "topCharacter": highest,
+    "score": "Your highest score with: " + highest + " is " + score + ".<br> ",
+    "statString": "Your total wins, losses and ties are... <br>Wins: " + attributes.stats.wins + "<br>" +
+      "Losses: " + attributes.stats.losses + "<br>Ties: " + attributes.stats.ties,
+    "charURL": charUrl,
+    "speakOutput": "Your highest score with: " + highest + " is " + score + ". Your total Wins: " + attributes.stats.wins +
+      ", Losses: " + attributes.stats.losses + ", Ties: " + attributes.stats.ties
   };
-
-  return theListData;
+  return stats;
 };

@@ -3,19 +3,6 @@
 exports.powersListMainData = async(handlerInput) => {
     const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     var attributes = await getAttributes(handlerInput);
-    var characterRecords = sessionAttributes.characterRecords;
-  
-//   var charLevel = [];
-//     for(var i = 0; i >= characterRecords.length;){
-//       if(attributes.characters[i].Name == characterRecords[i].fields.Name){
-//         if(attributes.characters[i].charLevel > 1){
-//         charLevel.push(attributes.characters[i].charLevel);
-//         }
-//       }else{ 
-//       charLevel.push(1);
-//       }
-//       i++;
-//     }
   
   var theListData = {
     "listTemplate2Metadata": {
@@ -64,7 +51,7 @@ exports.powersListMainData = async(handlerInput) => {
                     },
                     "thirdText": {
                       "type": "PlainText",
-                      "text": charLevel[0]
+                      "text": attributes.characters.Lillith.charLevel
                     }
                 },
                 "image": {
@@ -121,7 +108,7 @@ exports.powersListMainData = async(handlerInput) => {
                     },
                     "thirdText": {
                       "type": "PlainText",
-                      "text": charLevel[1]
+                      "text": attributes.characters.Randell.charLevel
                     }
                 },
                 "image": {
@@ -178,7 +165,7 @@ exports.powersListMainData = async(handlerInput) => {
                     },
                     "thirdText": {
                       "type": "PlainText",
-                      "text": charLevel[2]
+                      "text": attributes.characters.Charity.charLevel
                     }
                 },
                 "image": {
@@ -235,7 +222,7 @@ exports.powersListMainData = async(handlerInput) => {
                     },
                     "thirdText": {
                       "type": "PlainText",
-                      "text": charLevel[3]
+                      "text": attributes.characters["Sharpie Sharp"].charLevel
                     }
                 },
                 "image": {
@@ -292,7 +279,7 @@ exports.powersListMainData = async(handlerInput) => {
                     },
                     "thirdText": {
                       "type": "PlainText",
-                      "text": charLevel[4]
+                      "text": attributes.characters["Lars Thundersquat"].charLevel
                     }
                 },
                 "image": {
@@ -349,7 +336,7 @@ exports.powersListMainData = async(handlerInput) => {
                     },
                     "thirdText": {
                       "type": "PlainText",
-                      "text": charLevel[5]
+                      "text": attributes.characters["Lars Thundersquat"].charLevel
                     }
                 },
                 "image": {
@@ -406,7 +393,7 @@ exports.powersListMainData = async(handlerInput) => {
                     },
                     "thirdText": {
                       "type": "PlainText",
-                      "text": charLevel[6]
+                      "text": attributes.characters["Lars Thundersquat"].charLevel
                     }
                 },
                 "image": {
@@ -463,7 +450,7 @@ exports.powersListMainData = async(handlerInput) => {
                     },
                     "thirdText": {
                       "type": "PlainText",
-                      "text": charLevel[7]
+                      "text": attributes.characters["Lars Thundersquat"].charLevel
                     }
                 },
                 "image": {
@@ -520,7 +507,7 @@ exports.powersListMainData = async(handlerInput) => {
                     },
                     "thirdText": {
                       "type": "PlainText",
-                      "text": charLevel[8]
+                      "text": attributes.characters["Lars Thundersquat"].charLevel
                     }
                 },
                 "image": {

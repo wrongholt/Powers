@@ -14,11 +14,11 @@
                 {
                     "name": "AMAZON.YesIntent",
                     "samples": []
-                  },
-                  {
+                },
+                {
                     "name": "AMAZON.NoIntent",
                     "samples": []
-                  },
+                },
                 {
                     "name": "AMAZON.StopIntent",
                     "samples": []
@@ -131,31 +131,31 @@
                 },
                 {
                     "name": "WhatCanIBuyIntent",
+                    "slots": [],
                     "samples": [
-                      "what can I buy",
-                      "what can I shop for",
-                      "tell me what I can buy",
-                      "buy",
-                      "shop",
-                      "purchase"        
-                    ],
-                    "slots": []
-                  },    
-                  {
-                    "name": "BuyIntent",
-                    "samples": [
-                      "buy {ProductName}",
-                      "purchase {ProductName}",
-                      "want {ProductName}",
-                      "would like {ProductName}"
-                    ],
-                    "slots": [
-                      {
-                        "name": "ProductName",
-                        "type": "LIST_OF_PRODUCT_NAMES"
-                      }
+                        "what can I buy",
+                        "what can I shop for",
+                        "tell me what I can buy",
+                        "buy",
+                        "shop",
+                        "purchase"
                     ]
-                  },            
+                },
+                {
+                    "name": "BuyIntent",
+                    "slots": [
+                        {
+                            "name": "ProductName",
+                            "type": "LIST_OF_PRODUCT_NAMES"
+                        }
+                    ],
+                    "samples": [
+                        "buy {ProductName}",
+                        "purchase {ProductName}",
+                        "want {ProductName}",
+                        "would like {ProductName}"
+                    ]
+                },
                 {
                     "name": "RandomCharacterSelectedIntent",
                     "slots": [],
@@ -178,24 +178,77 @@
                         "{Move} {Move}",
                         "{Move}"
                     ]
+                },
+                {
+                    "name": "UseExperiencePack",
+                    "slots": [
+                        {
+                            "name": "ExperiencePack",
+                            "type": "ExperiencePacks"
+                        }
+                    ],
+                    "samples": [
+                        "use {ExperiencePack} pack",
+                        "use {ExperiencePack} xp",
+                        "use {ExperiencePack} ",
+                        "use {ExperiencePack} experience",
+                        "use {ExperiencePack} experience pack"
+                    ]
+                },
+                {
+                    "name": "UseExperiencePackOnCharacter",
+                    "slots": [
+                        {
+                            "name": "UseOnCharacters",
+                            "type": "CharacterSlots"
+                        }
+                    ],
+                    "samples": [
+                        "give {UseOnCharacters} the pack",
+                        "for {UseOnCharacters}",
+                        "on {UseOnCharacters}",
+                        "use on {UseOnCharacters}",
+                        "give {UseOnCharacters} experience",
+                        "give experience to {UseOnCharacters}"
+                    ]
                 }
             ],
             "types": [
                 {
                     "name": "LIST_OF_PRODUCT_NAMES",
                     "values": [
-                      {
-                        "name": {
-                          "value": "Expansion one",
-                          "synonyms": [
-                            "expansion",
-                            "first expansion",
-                            "more characters"
-                          ]
+                        {
+                            "name": {
+                                "value": "Gold Experience Pack",
+                                "synonyms": [
+                                    "gold pack",
+                                    "gold",
+                                    "gold xp"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "Silver Experience Pack",
+                                "synonyms": [
+                                    "silver pack",
+                                    "silver",
+                                    "silver xp"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "Copper Experience Pack",
+                                "synonyms": [
+                                    "copper pack",
+                                    "copper",
+                                    "copper xp"
+                                ]
+                            }
                         }
-                      }
                     ]
-                  },
+                },
                 {
                     "name": "CharacterSlots",
                     "values": [
@@ -246,6 +299,7 @@
                                 "synonyms": [
                                     "Lars",
                                     "Thundersquat",
+                                    "Lars thundersquat",
                                     "Thunder"
                                 ]
                             }
@@ -468,6 +522,26 @@
                             }
                         }
                     ]
+                },
+                {
+                    "name": "ExperiencePacks",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "Copper"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "Silver"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "Gold"
+                            }
+                        }
+                    ]
                 }
             ]
         },
@@ -492,6 +566,20 @@
                             ]
                         }
                     ]
+                },
+                {
+                    "name": "UseExperiencePack",
+                    "confirmationRequired": false,
+                    "prompts": {},
+                    "slots": [
+                        {
+                            "name": "ExperiencePack",
+                            "type": "ExperiencePacks",
+                            "confirmationRequired": false,
+                            "elicitationRequired": false,
+                            "prompts": {}
+                        }
+                    ]
                 }
             ],
             "delegationStrategy": "ALWAYS"
@@ -511,6 +599,70 @@
                     {
                         "type": "PlainText",
                         "value": "Oh no, I am sorry that isn't a move please try another."
+                    }
+                ]
+            },
+            {
+                "id": "Confirm.Intent.1020579909470",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "Would you like to use the {ExperiencePack} experience pack now?"
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "I heard you want to use a {ExperiencePack} experience pack is this correct?"
+                    }
+                ]
+            },
+            {
+                "id": "Slot.Validation.1020579909470.1069196540129.996873987052",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "Excuse me but that is not a character please use say one of the characters names."
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "You have tried to break me but it won't work...Please use a different character name."
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "I am sorry that isn't a character in the list, please try again."
+                    }
+                ]
+            },
+            {
+                "id": "Elicit.Slot.1020579909470.1069196540129",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "Thank you for using an experience pack who would you like to use it on?"
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "So, you want to use an experience pack, that is great. Who would you like to use it on?"
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "Who would you like to use the experience pack on?"
+                    }
+                ]
+            },
+            {
+                "id": "Confirm.Slot.1020579909470.1069196540129",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "You said you want to use your experience pack on {Characters} , correct?"
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "I heard you want to use your experience pack on {Characters} is this Okay?"
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "One last check you want to use your experience pack on {Characters} , is this correct?"
                     }
                 ]
             }

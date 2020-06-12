@@ -708,7 +708,7 @@
               "items": [
                   {
                       "type": "Image",
-                      "source": "https://powers.s3.amazonaws.com/efe-kurnaz-RnCPiXixooY-unsplash.jpg",
+                      "source": "${payload.mainData.properties.bgImage}",
                       "scale": "best-fill",
                       "position": "absolute",
                       "overlayColor": "rgba(0,0,0,0.2)",
