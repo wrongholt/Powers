@@ -31,14 +31,6 @@
                             "type": "AMAZON.FictionalCharacter"
                         },
                         {
-                            "name": "DEName",
-                            "type": "AMAZON.DE_FIRST_NAME"
-                        },
-                        {
-                            "name": "GBName",
-                            "type": "AMAZON.GB_FIRST_NAME"
-                        },
-                        {
                             "name": "Name",
                             "type": "AMAZON.FirstName"
                         }
@@ -51,15 +43,7 @@
                         "I am {Name}",
                         "My name is {Name}",
                         "My name's {Name}",
-                        "Hi my name is {Name}",
-                        "I am {DEName}",
-                        "My name is {DEName}",
-                        "My name's {DEName}",
-                        "Hi my name is {DEName}",
-                        "I am {GBName}",
-                        "My name is {GBName}",
-                        "My name's {GBName}",
-                        "Hi my name is {GBName}"
+                        "Hi my name is {Name}"
                     ]
                 },
                 {

@@ -5,12 +5,52 @@
         "en-US": {
           "summary": "Fighting game that is turned based",
           "examplePhrases": [
-            "Alexa open hello world",
-            "hello",
-            "help"
+            "Alexa open Powers",
+            "ask powers to pick a character",
+            "ask powers to view my stats"
           ],
           "name": "Powers",
-          "description": "Sample Full Description"
+          "description": "Powers is a turn based fighting game that has some great user interface and fun voice that sounds like a robot, that is your fighter helper companion."
+        },
+        "en-CA": {
+          "summary": "Fighting game that is turned based",
+          "examplePhrases": [
+            "Alexa open Powers",
+            "ask powers to pick a character",
+            "ask powers to view my stats"
+          ],
+          "name": "Powers",
+          "description": "Powers is a turn based fighting game that has some great user interface and fun voice that sounds like a robot, that is your fighter helper companion."
+        },
+        "en-IN": {
+          "summary": "Fighting game that is turned based",
+          "examplePhrases": [
+            "Alexa open Powers",
+            "ask powers to pick a character",
+            "ask powers to view my stats"
+          ],
+          "name": "Powers",
+          "description": "Powers is a turn based fighting game that has some great user interface and fun voice that sounds like a robot, that is your fighter helper companion."
+        },
+        "en-GB": {
+          "summary": "Fighting game that is turned based",
+          "examplePhrases": [
+            "Alexa open Powers",
+            "ask powers to pick a character",
+            "ask powers to view my stats"
+          ],
+          "name": "Powers",
+          "description": "Powers is a turn based fighting game that has some great user interface and fun voice that sounds like a robot, that is your fighter helper companion."
+        },
+        "en-AU": {
+          "summary": "Fighting game that is turned based",
+          "examplePhrases": [
+            "Alexa open Powers",
+            "ask powers to pick a character",
+            "ask powers to view my stats"
+          ],
+          "name": "Powers",
+          "description": "Powers is a turn based fighting game that has some great user interface and fun voice that sounds like a robot, that is your fighter helper companion."
         }
       },
       "isAvailableWorldwide": true,

@@ -226,7 +226,7 @@
                         },
                         {
                             "type": "Text",
-                            "text": "Level ${data.textContent.thirdText.text || '1'} ",
+                            "text": "Level ${data.textContent.thirdText.text} ",
                             "style": "textStyleDetails"
                         },
                         {
@@ -290,7 +290,7 @@
                         },
                         {
                             "type": "Text",
-                            "text": "Level ${data.textContent.thirdText.text || '1'} ",
+                            "text": "Level ${data.textContent.thirdText.text} ",
                             "style": "textStyleDetails"
                         }
                     ]

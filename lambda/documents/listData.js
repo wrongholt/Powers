@@ -336,7 +336,7 @@ exports.powersListMainData = async(handlerInput) => {
                     },
                     "thirdText": {
                       "type": "PlainText",
-                      "text": attributes.characters["Lars Thundersquat"].charLevel
+                      "text": attributes.characters.Edge.charLevel
                     }
                 },
                 "image": {
@@ -393,7 +393,7 @@ exports.powersListMainData = async(handlerInput) => {
                     },
                     "thirdText": {
                       "type": "PlainText",
-                      "text": attributes.characters["Lars Thundersquat"].charLevel
+                      "text": attributes.characters.Argus.charLevel
                     }
                 },
                 "image": {
@@ -450,7 +450,7 @@ exports.powersListMainData = async(handlerInput) => {
                     },
                     "thirdText": {
                       "type": "PlainText",
-                      "text": attributes.characters["Lars Thundersquat"].charLevel
+                      "text": attributes.characters.Karrigan.charLevel
                     }
                 },
                 "image": {
@@ -507,7 +507,7 @@ exports.powersListMainData = async(handlerInput) => {
                     },
                     "thirdText": {
                       "type": "PlainText",
-                      "text": attributes.characters["Lars Thundersquat"].charLevel
+                      "text": attributes.characters["Electric Mean"].charLevel
                     }
                 },
                 "image": {

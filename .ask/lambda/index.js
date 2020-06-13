@@ -73,7 +73,7 @@ const LaunchRequestHandler = {
       }
       i++;
     }
-    if (sessionAttributes.previousIntent === "stats") {
+    if (sessionAttributes.previousIntent === "stats" || sessionAttributes.previousIntent === "standings") {
       speakOutput = "I am sorry you need to play more to get your statistics.";
     } else if (sessionAttributes.previousIntent === "CopperXP") {
       speakOutput = "Outstanding you just bought the Copper Experience Pack. If you wish to use them just say, Use Copper Pack or Use Copper Pack on Character name.";
@@ -144,7 +144,8 @@ const NameIntentHandler = {
         userName = usersCustName;
       }
 
-      var record = await new Promise((resolve, reject) => {
+      
+      await new Promise((resolve, reject) => {
         base('PlayerCharts').create([{
           "fields": {
             "Name": userName,
@@ -158,9 +159,14 @@ const NameIntentHandler = {
           resolve(record);
         });
       });
-
       attributes.name = userName;
       attributes.nameid = userName + usersID;
+      var theBase = "appoBlEf8I1VQdU3r";
+      var record = await helpers.httpGet(theBase, "&filterByFormula=%7BuserID%7D%3D%22" + attributes.nameid + "%22", 'PlayerCharts');
+      var userRecord = record.records;
+      console.log("THE RECORD IS" + userRecord);
+      attributes.usersID = userRecord[0].fields.RecordId;
+      
       await saveAttributes(handlerInput, attributes);
       var nameSpeak = ['Perfect, ' + helpers.capitalize_Words(userName) + ", now lets pick your character, just say pick character.",
         'Outstanding, I have saved your name for rankings and to be more personable. Now lets pick your character, ' + helpers.capitalize_Words(userName) + '. Just say; pick character.',
@@ -297,17 +303,15 @@ const CharacterSelectedHandler = {
       Alexa.getIntentName(handlerInput.requestEnvelope) === 'CharacterSelectedIntent';
   },
   async handle(handlerInput) {
-    var character;
+    var character = handlerInput.requestEnvelope.request.intent.slots.Characters.value;
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "characterSelected";
     var characters = sessionAttributes.characterRecords;
     if (!sessionAttributes.playerPower) {
-      character = handlerInput.requestEnvelope.request.intent.slots.Characters.value;
       await characterSelector(handlerInput, characters, character);
       return CharactersSelectionScreenTwoHandler.handle(handlerInput);
     } else if (!sessionAttributes.enemyPower) {
-      character = handlerInput.requestEnvelope.request.intent.slots.Characters.value;
       await characterSelector(handlerInput, characters, character);
       return FightStartHandler.handle(handlerInput);
     }
@@ -354,10 +358,10 @@ const FightStartHandler = {
       speakOutput = sessionAttributes.playerPower + ' <phoneme alphabet="ipa" ph="versus">VS</phoneme> ' + sessionAttributes.enemyPower + "! Ok, next just say a move, or say move list, to access it.  Ready Fight!!";
       sessionAttributes.FightStart = true;
     } else {
-      var fightReturn = ["Let's get back to the fight, just say a move.",
-        "Sweet you have returned, just say a move to get back to fighting!",
-        "So someone told me, to tell you, to just say a move to fight.",
-        "Light attack or Heavy attack are universal fight moves you can start with those if you don't remember a fight move."
+      var fightReturn = ["Let's get back to the fight, just say <break strength='strong'/>a<break strength='strong'/> move.",
+        "Sweet you have returned, just say <break strength='strong'/>a<break strength='strong'/> move to get back to fighting!",
+        "So someone told me, to tell you, to just say,<break strength='strong'/>a<break strength='strong'/> move to fight.",
+        "Light attack or Heavy attack are universal fight moves you can start with those if you don't remember <break strength='strong'/>a<break strength='strong'/> fight move."
       ];
       speakOutput = helpers.randomNoRepeats(fightReturn);
 
@@ -418,14 +422,13 @@ const PlayerFightHandler = {
         await fightingPlayer(handlerInput, move);
         if (sessionAttributes.didCompDodge) {
           speakOutput = sessionAttributes.computer.Name + " blocked your move.";
-          sessionAttributes.playerLastMoveSpeak = speakOutput;
           sessionAttributes.didCompDodge = false;
         } else if (sessionAttributes.playerPowerAttackAvail === true) {
           speakOutput = "Your " + sessionAttributes.playerMoveData.Name + " did " + sessionAttributes.playerMoveData.Damage + " points of damage to " + sessionAttributes.computer.Name + "! You also have your power move available, to use just say, power move. They now have " + sessionAttributes.computersHealth + " points left!";
-          sessionAttributes.playerLastMoveSpeak = speakOutput;
+          
         } else {
           speakOutput = "Your " + sessionAttributes.playerMoveData.Name + " did " + sessionAttributes.playerMoveData.Damage + " points of damage to " + sessionAttributes.computer.Name + "! They now have " + sessionAttributes.computersHealth + " points left!";
-          sessionAttributes.playerLastMoveSpeak = speakOutput;
+          
         }
       }
       if (sessionAttributes.playerPowerAttackAvail === true & move === "use power move" || sessionAttributes.playerPowerAttackAvail === true & move === "power move") {
@@ -433,35 +436,34 @@ const PlayerFightHandler = {
         audio = sessionAttributes.player.POWER_AUDIO;
         if (sessionAttributes.player.Name === "Charity") {
           speakOutput = audio + "You just used " + sessionAttributes.player.POWER_ATK + " healing yourself for " + sessionAttributes.player.POWER_DMG + " points! You now have " + sessionAttributes.playersHealth + " points!";
-          sessionAttributes.playerLastMoveSpeak = speakOutput;
+          
         } else {
           speakOutput = audio + "You just used " + sessionAttributes.player.POWER_ATK + " doing  a total of " + sessionAttributes.player.POWER_DMG + " damage to " + sessionAttributes.computer.Name + "! They now have " + sessionAttributes.computersHealth + " points left!";
-          sessionAttributes.playerLastMoveSpeak = speakOutput;
+          
         }
         sessionAttributes.playerPowerAttackAvail = false;
         sessionAttributes.powersAttackTotal = 0;
       }
-
-      if (sessionAttributes.compPowerAttackAvail === true) {
+      if (sessionAttributes.compPowerAttackAvail === false || !sessionAttributes.compPowerAttackAvail) {
+        await fightingComputer(handlerInput); 
+        if (sessionAttributes.didPlayerDodge) {
+          speakOutput += " " + sessionAttributes.player.Name + ", has blocked " + sessionAttributes.computer.Name + "'s move!";
+          sessionAttributes.didPlayerDodge = false;
+          
+        }else{
+          speakOutput += " Your opponents, " + sessionAttributes.computerMoveData.Name + " did " + sessionAttributes.computerMoveData.Damage + " points of damage to " + sessionAttributes.player.Name + "! You now have " + sessionAttributes.playersHealth + " points left, keep fighting!";
+        }
+        
+      } else if (sessionAttributes.compPowerAttackAvail === true) {
         usePowerAttack(handlerInput, sessionAttributes.computer, "computer");
         audio = sessionAttributes.computer.POWER_AUDIO;
         if (sessionAttributes.computer.Name === "Charity") {
           speakOutput += audio + " Your opponent just used " + sessionAttributes.computer.POWER_ATK + " healing herself for " + sessionAttributes.player.POWER_DMG + " points! They now have " + sessionAttributes.computersHealth + " points!";
-          sessionAttributes.computerLastMoveSpeak = speakOutput;
         } else {
           speakOutput += audio + " Your opponent just activated their power move " + sessionAttributes.computer.POWER_ATK + " and did " + sessionAttributes.computer.POWER_DMG + " points of damage to you! You now have " + sessionAttributes.playersHealth + " points left, keep fighting!";
-          sessionAttributes.computerLastMoveSpeak = speakOutput;
         }
         sessionAttributes.compPowerAttackAvail = false;
         sessionAttributes.powersAttackTotal2 = 0;
-      } else if (sessionAttributes.didPlayerDodge) {
-        speakOutput += " " + sessionAttributes.player.Name + ", has blocked " + sessionAttributes.player.Name + "'s move!";
-        sessionAttributes.computerLastMoveSpeak = speakOutput;
-        sessionAttributes.didPlayerDodge = false;
-      } else {
-        sessionAttributes.computerLastMoveSpeak = speakOutput;
-        speakOutput += " Your opponents, " + sessionAttributes.computerMoveData.Name + " did " + sessionAttributes.computerMoveData.Damage + " points of damage to " + sessionAttributes.player.Name + "! You now have " + sessionAttributes.playersHealth + " points left, keep fighting!";
-        sessionAttributes.computerLastMoveSpeak = speakOutput;
       }
     }
     sessionAttributes.turnCounter += 1;
@@ -523,17 +525,17 @@ const FightEndHandler = {
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "fightEnd";
     if (sessionAttributes.computerWin === false && sessionAttributes.playerWin === false) {
-      speakOutput = sessionAttributes.playerLastMoveSpeak + " " + sessionAttributes.computerLastMoveSpeak + " Wow, it was a tie, you will get them next time!";
+      speakOutput =  "You just used the " +sessionAttributes.playerMoveData.Name + " move and your opponent used "+ sessionAttributes.computerMoveData.Name + " and it ended in a tie, you will get them next time!";
       displayOutput = "Wow, it was a tie, you will get them next time!";
       bgColor = "#eeeeee";
       color = "#0E2773";
     } else if (sessionAttributes.playerWin === false) {
-      speakOutput = sessionAttributes.playerLastMoveSpeak + " " + sessionAttributes.computerLastMoveSpeak + " Sorry, but you lost, there is always next time!";
+      speakOutput = "You just used the " +sessionAttributes.playerMoveData.Name + " move and your opponent used "+ sessionAttributes.computerMoveData.Name + " and sorry to say, but you lost, there is always next time!";
       displayOutput = "Sorry, but you lost, there is always next time!";
       bgColor = "#BF1736";
       color = "#0E2773";
     } else if (sessionAttributes.computerWin === false) {
-      speakOutput = sessionAttributes.playerLastMoveSpeak + " " + sessionAttributes.computerLastMoveSpeak + " Nice you won!";
+      speakOutput = "You just used the " +sessionAttributes.playerMoveData.Name + " move and your opponent used "+ sessionAttributes.computerMoveData.Name + ". The results are in, you won!";
       displayOutput = "Nice you won!";
       bgColor = "#0E2773";
       color = "#BF1736";
@@ -555,7 +557,7 @@ const FightEndHandler = {
                 "bgImage": bgImage,
                 "bgColor": bgColor,
                 "color": color,
-                "message": speakOutput
+                "message": displayOutput
               }
             }
           }
@@ -628,6 +630,7 @@ const YourStatsHandler = {
     }
     var playerName = attributes.name;
     var statsObject = await statsData(handlerInput);
+    playerName = helpers.capitalize_Words(playerName);
     speakOutput = "The stats for " + playerName + " are the following: " + statsObject.speakOutput;
 
     if (helpers.supportsAPL(handlerInput)) {
@@ -646,9 +649,10 @@ const YourStatsHandler = {
               "properties": {
                 "power": statsObject.charURL,
                 "bgImage": bgImage,
-                "title": playerName,
+                "headerTitle": playerName,
+                "title": statsObject.topCharacter,
                 "subtitle": statsObject.topCharacter,
-                "primaryText": statsObject.score + statsObject.statString
+                "primaryText": statsObject.score + statsObject.count + statsObject.statString
 
               }
             }
@@ -672,29 +676,53 @@ const YourStandingsHandler = {
   async handle(handlerInput) {
     var speakOutput = "";
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    var statsObject = await statsData(handlerInput);
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "standings";
     var attributes = await getAttributes(handlerInput);
     if (!attributes.hasOwnProperty("stats")) {
-      speakOutput = "I am sorry you need to play more to get your standings";
+      return LaunchRequestHandler.handle(handlerInput);
     }
-
+    var theBase = "appoBlEf8I1VQdU3r";
+    var playerData = await helpers.httpGet(theBase,"","PlayerCharts");
+    var playerRecords = playerData.records;
+    var playersString;
+    var playersString2;
+    
+    for (var i in playerRecords) {
+      var theNumber = 1;
+      if(playerRecords[i].fields.HighestScoreLevel === statsObject.highestScoreLevel){
+      playersString2 += theNumber + ". " + playerRecords[i].fields.userID +": " +playerRecords[i].fields.HighestScore + " Level: "+playerRecords[i].fields.HighestScoreLevel + "<br>";
+      }
+      for(var j = 0; j===10;j++){
+        playersString += theNumber + ". " + playerRecords[i].fields.userID +": " +playerRecords[i].fields.HighestScore + " Level: "+playerRecords[i].fields.HighestScoreLevel + "<br>";
+        speakOutput += theNumber + ". " + playerRecords[i].fields.userID +": " +playerRecords[i].fields.HighestScore + ", Level: "+playerRecords[i].fields.HighestScoreLevel + "";
+        console.log("WITHIN THE PLAYERRECORDS LOOP---->>>" + playersString);
+      }
+      theNumber++;
+      }
+    var title2 = "Your top score: "+statsObject.highestScore + " at level "+ statsObject.highestScoreLevel + ". ";
+    var title1 = "Your top score, "+statsObject.highestScore + " with "+ statsObject.topCharacter + ". ";
     if (helpers.supportsAPL(handlerInput)) {
+      var bgImage = await getRandomMainBGImage();
       return handlerInput.responseBuilder
         .speak(helpers.speechPolly(speakOutput))
         .reprompt(helpers.speechPolly(speakOutput))
         .addDirective({
           type: 'Alexa.Presentation.APL.RenderDocument',
           version: '1.3',
-          document: moveListAPL,
+          document: standings,
           datasources: {
             "mainData": {
               "type": "object",
               "properties": {
-                "powerPlayer": sessionAttributes.player.PWR_IMG,
-                "powerComputer": sessionAttributes.computer.PWR_IMG,
-                "powerName": sessionAttributes.player.Name,
-                "moveList": moveList(handlerInput)
+                "bgImage": bgImage,
+                "headerTitle": "World Leaderboard",
+                "title": title1,
+                "textbox": playersString,
+                "headerTitle2": "Level Leaderboard",
+                "title2": title2,
+                "textbox2": playersString2
 
               }
             }
@@ -727,21 +755,21 @@ const UseExperiencePackHandler = {
         speakOutput = "I am sorry you need to buy some experience packs. Is there anything else you would like to do like pick character to fight or look at your stats?";
       } else {
         sessionAttributes.expPack = "copper";
-        speakOutput = "Now who would you like to add it the experience too? You can pick between any of these characters; "+ charactersArray + '! Just say, use on then the characters name.';
+        speakOutput = "Now who would you like to add it the experience too? Just say, use on, then one of these names; "+ charactersArray + '! ';
       }
     } else if (experiencePack === "Silver" || experiencePack === "silver") {
       if (!attributes.hasOwnProperty("silverXP") || attributes.silverXP === 0) {
         speakOutput = "I am sorry you need to buy some experience packs. Is there anything else you would like to do like pick character to fight or look at your stats?";
       } else {
         sessionAttributes.expPack = "silver";
-        speakOutput = "Now who would you like to add it the experience too? You can pick between any of these characters; "+ charactersArray + '! Just say, use on then the characters name.';
+        speakOutput = "Now who would you like to add it the experience too? Just say, use on, then one of these names; "+ charactersArray + '! ';
       }
     } else if (experiencePack === "Gold" || experiencePack === "gold") {
       if (!attributes.hasOwnProperty("goldXP") || attributes.goldXP === 0) {
         speakOutput = "I am sorry you need to buy some experience packs. Is there anything else you would like to do like pick character to fight or look at your stats?";
       } else {
         sessionAttributes.expPack = "gold";
-        speakOutput = "Now who would you like to add it the experience too? You can pick between any of these characters; "+ charactersArray + '! Just say, use on then the characters name.';
+        speakOutput = "Now who would you like to add it the experience too? Just say, use on, then one of these names; "+ charactersArray + '! ';
       }
     }
 
@@ -775,7 +803,7 @@ const UseExperienceOnCharacterPackHandler = {
       } else {
         attributes.copperXP = parseInt(attributes.copperXP) - 1;
         attributes.characters[character].charExp = parseInt(attributes.characters[character].charExp) + 200;
-        speakOutput = "I have added two hundred experience points to " + character + '! You have ' + attributes.copperXP + ' copper experience packs left'
+        speakOutput = "I have added two hundred experience points to " + character + '! You have ' + attributes.copperXP + ' copper experience packs left';
       }
     } else if (sessionAttributes.expPack === "silver") {
       if (!attributes.hasOwnProperty("silverXP") || attributes.silverXP === 0) {
@@ -783,7 +811,7 @@ const UseExperienceOnCharacterPackHandler = {
       } else {
         attributes.silverXP = parseInt(attributes.silver) - 1;
         attributes.characters[character].charExp = parseInt(attributes.characters[character].charExp) + 350;
-        speakOutput = "I have added three hundred and fifty experience points to " + character + '! You have ' + attributes.silverXP + ' silver experience packs left'
+        speakOutput = "I have added three hundred and fifty experience points to " + character + '! You have ' + attributes.silverXP + ' silver experience packs left';
       }
     } else if (sessionAttributes.expPack === "gold") {
       if (!attributes.hasOwnProperty("goldXP") || attributes.goldXP === 0) {
@@ -1257,8 +1285,7 @@ findCharacterInData = (characters, character) => {
     i++;
   }
 };
-findMoveInData = async (handlerInput, player, move) => {
-  var attributes = await getAttributes(handlerInput);
+findMoveInData = (player, move) => {
   var moveStats;
   if (player.ATK_LT_COMBO === move) {
     moveStats = {
@@ -1305,22 +1332,26 @@ fightingPlayer = async(handlerInput, move) => {
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   if (move === "use power move" || move === "power move") return;
   var player = sessionAttributes.player;
-  var moveData = findMoveInData(handlerInput, player, move);
-  console.log("IN FIGHTING PLAYER FUNCTION ---->>>>" + JSON.stringify(moveData));
+  var moveData = findMoveInData(player, move);
+  console.log("MOVE DATA BEFORE---->>>>>" + JSON.stringify(moveData));
+  var attributes = await getAttributes(handlerInput);
+  if (attributes.characters[sessionAttributes.playerPower].hasOwnProperty("attackDamageIncrease")) {
+  var updateDamage = moveData.Damage  * attributes.characters[sessionAttributes.playerPower].attackDamageIncrease;
+  moveData.Damage = updateDamage.toFixed();
+  console.log("MOVE DATA AFTER---->>>>>" + JSON.stringify(moveData));
+  sessionAttributes.playerMoveData = moveData;
+  }else{
+    sessionAttributes.playerMoveData = moveData;
+  }
   var didTheyDodge = dodgeRating(moveData);
   if (didTheyDodge) {
     sessionAttributes.didCompDodge = didTheyDodge;
   } else {
     sessionAttributes.didCompDodge = false;
-   await health(handlerInput, "player", moveData);
+    health(handlerInput, "player", moveData);
   }
-  sessionAttributes.playerMoveData = moveData;
+  
   powersAttackMove(handlerInput, "player");
-  if (sessionAttributes.compPowerAttackAvail === false) {
-    await fightingComputer(handlerInput);
-  } else return;
-
-
 };
 
 fightingComputer = async (handlerInput) => {
@@ -1328,14 +1359,15 @@ fightingComputer = async (handlerInput) => {
   if (sessionAttributes.compPowerAttackAvail === true) return;
   var computer = sessionAttributes.computer;
   var compMove = randomizeComputerAttack(computer);
-  var moveData = findMoveInData(handlerInput, computer, compMove);
+  var moveData = findMoveInData(computer, compMove);
   var didTheyDodge = dodgeCompRating(moveData);
   if (didTheyDodge) {
     sessionAttributes.didPlayerDodge = didTheyDodge;
   } else {
     sessionAttributes.didPlayerDodge = false;
-   await health(handlerInput, "computer", moveData);
+    health(handlerInput, "computer", moveData);
   }
+  console.log("THE MOVE DATA FROM COMPUTER --->>>" +JSON.stringify(moveData));
   sessionAttributes.computerMoveData = moveData;
   powersAttackMove(handlerInput, "computer");
 };
@@ -1346,8 +1378,8 @@ playerBlocked = (handlerInput, move) => {
   }
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   var compMove = randomizeComputerAttack(sessionAttributes.computer);
-  var moveCompData = findMoveInData(handlerInput, sessionAttributes.computer, compMove);
-  var moveData = findMoveInData(handlerInput, sessionAttributes.player, move);
+  var moveCompData = findMoveInData(sessionAttributes.computer, compMove);
+  var moveData = findMoveInData(sessionAttributes.player, move);
   let theDodgeRating = moveData.DodgeRating;
   let randomNumberTen = Math.floor(Math.random() * (5 * 100 - 1 * 100) + 1 * 100) / (1 * 100);
   var blockDamage = moveData.Damage;
@@ -1358,15 +1390,10 @@ playerBlocked = (handlerInput, move) => {
     return "You activated, " + moveData.Name + " since you blocked their attack you did " + blockDamage + " points of damage, but you still took " + damageTook.toFixed() + " points of damage. Keep Fighting!";
   }
 };
-health = async (handlerInput, whosTurn, moveData) => {
-  var attributes = await getAttributes(handlerInput);
+health = (handlerInput, whosTurn, moveData) => {
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   if (whosTurn === "player") {
-    if (attributes.chacters[sessionAttributes.playerPower].hasOwnProperty("attackDamageIncrease")) {
-    sessionAttributes.computersHealth = (parseInt(sessionAttributes.computersHealth) - (parseInt(moveData.Damage) * parseInt(attributes.characters[sessionAttributes.playerPower].attackDamageIncrease)));
-    }else{
       sessionAttributes.computersHealth = (parseInt(sessionAttributes.computersHealth) - parseInt(moveData.Damage));
-    }
   } else if (whosTurn === "computer") {
     sessionAttributes.playersHealth = (parseInt(sessionAttributes.playersHealth) - parseInt(moveData.Damage));
   }
@@ -1401,23 +1428,35 @@ randomizeComputerAttack = (computer) => {
 
 powersAttackMove = (handlerInput, whosTurn) => {
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-  var compDamage = sessionAttributes.computerMoveData.Damage;
-  var playerDamage = sessionAttributes.playerMoveData.Damage;
-  var total = (((compDamage * 0.5) * playerDamage) * sessionAttributes.player.POWER_RATIO);
-  sessionAttributes.powersAttackTotal += total;
-
-  if (sessionAttributes.player.POWER_TOTAL <= sessionAttributes.powersAttackTotal) {
-    sessionAttributes.playerPowerAttackAvail = true;
+  var counter;
+  if(!sessionAttributes.hasOwnProperty("turnCounter")){
+    sessionAttributes.turnCounter = 1;
+  }else{
+    counter = sessionAttributes.turnCounter;
   }
-  var total2 = (((playerDamage * 0.5) * compDamage) * sessionAttributes.computer.POWER_RATIO);
+  if(whosTurn === "player"){
+    var playerDamage = sessionAttributes.playerMoveData.Damage;
+    var total = (((playerDamage * 0.5) * playerDamage) * sessionAttributes.player.POWER_RATIO);
+    sessionAttributes.powersAttackTotal += total;
+    if (sessionAttributes.player.POWER_TOTAL <= sessionAttributes.powersAttackTotal) {
+      sessionAttributes.playerPowerAttackAvail = true;
+    }
+  }
+
+  if(whosTurn === "computer"){
+    var computerDamage = sessionAttributes.computerMoveData.Damage;
+  var total2 = (((computerDamage * 0.5) * computerDamage) * sessionAttributes.computer.POWER_RATIO);
   sessionAttributes.powersAttackTotal2 += total2;
   if (sessionAttributes.computer.POWER_TOTAL <= sessionAttributes.powersAttackTotal2 && whosTurn === "computer") {
     sessionAttributes.compPowerAttackAvail = true;
+    }
   }
 };
 usePowerAttack = (handlerInput, player, whosTurn) => {
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   var damage = player.POWER_DMG;
+  
+  console.log("USEPOWERATTACK -------->>>>>" + damage);
   if (whosTurn === "player") {
     if (player.Name === "Charity") {
       sessionAttributes.playersHealth = (parseInt(sessionAttributes.playersHealth) + parseInt(damage));
@@ -1438,7 +1477,12 @@ usePowerAttack = (handlerInput, player, whosTurn) => {
 healthBar = (handlerInput) => {
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   if (sessionAttributes.playersHealth > 100) {
-    var barOne = 100 - sessionAttributes.computerMoveData.Damage;
+    var barOne;
+    if(!sessionAttributes.hasOwnProperty("playersBarOne")){
+      barOne = 100 - parseInt(sessionAttributes.computerMoveData.Damage);
+    }else{
+      barOne = parseInt(sessionAttributes.playersBarOne) - parseInt(sessionAttributes.computerMoveData.Damage);
+    }
     sessionAttributes.playersBarOne = barOne + "%";
     sessionAttributes.playersBarTwo = "100%";
   } else {
@@ -1447,7 +1491,12 @@ healthBar = (handlerInput) => {
     sessionAttributes.playersBarTwo = barTwo + "%";
   }
   if (sessionAttributes.computersHealth > 100) {
-    var barCompOne = 100 - sessionAttributes.playerMoveData.Damage;
+    var barCompOne;
+    if(!sessionAttributes.hasOwnProperty("computersBarOne")){
+      barCompOne = 100 - parseInt(sessionAttributes.playerMoveData.Damage);
+    }else{
+      barCompOne = parseInt(sessionAttributes.computersBarOne) - parseInt(sessionAttributes.playerMoveData.Damage);
+    }
     sessionAttributes.computersBarOne = barCompOne + "%";
     sessionAttributes.computersBarTwo = "100%";
   } else {
@@ -1521,8 +1570,8 @@ calculateStats = async (handlerInput) => {
   var attributes = await getAttributes(handlerInput);
   let playerCharacter = sessionAttributes.player.Name;
   let compCharacter = sessionAttributes.computer.Name;
-  let charLevel;
-  let charExp;
+  var charLevel;
+  var charExp;
   if (!attributes.characters[playerCharacter].hasOwnProperty("charLevel")) {
     attributes.characters[playerCharacter].charLevel = 1;
   } else {
@@ -1562,14 +1611,16 @@ getStandings = async (handlerInput) => {
   var result = EloRating.calculate(playerScore, compScore, playerWin);
   attributes.characters[player.Name].score = result.playerRating;
   attributes.stats.rankingScore = result.playerRating;
+
   await saveAttributes(handlerInput, attributes);
+  
 };
 
 levelingCharacter = async (handlerInput,playerCharacter) => {
   const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   var attributes = await getAttributes(handlerInput);
-  let charLevel = attributes.characters[playerCharacter].charLevel;
-  let charExp = attributes.characters[playerCharacter].charExp;
+  var charLevel = attributes.characters[playerCharacter].charLevel;
+  var charExp = attributes.characters[playerCharacter].charExp;
 
   if (charExp < 200) {
     charLevel = 1;
@@ -1655,7 +1706,7 @@ levelingCharacter = async (handlerInput,playerCharacter) => {
     console.log("Invalid character experience points");
   }
   if (!attributes.characters[playerCharacter].hasOwnProperty("attackDamageIncrease")) {
-    attributes.characters[playerCharacter].attackDamageIncrease = 1;
+    attributes.characters[playerCharacter].attackDamageIncrease = attackDamageIncrease;
   } else {
     attributes.characters[playerCharacter].attackDamageIncrease = attackDamageIncrease;
   }
@@ -1698,26 +1749,72 @@ var backgroundImage = ["https://powers.s3.amazonaws.com/maarten-van-den-heuvel-S
 statsData = async (handlerInput) => {
   const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   var attributes = await getAttributes(handlerInput);
+  var scoreObj = {};
   var countObj = {};
-  for (var i in attributes.characters) {
+  var i;
+  for (i in attributes.characters) {
     if (attributes.characters[i].hasOwnProperty("count")) {
-      countObj[i] = attributes.characters[i].count;
+       countObj[i] = attributes.characters[i].count;
+
+    }
+  }
+  for (i in attributes.characters) {
+    if (attributes.characters[i].hasOwnProperty("score")) {
+      scoreObj[i] = attributes.characters[i].score;
     }
   }
 
-  var highest = _.max(Object.keys(countObj), function (o) {
-    return countObj[o];
-  });
-  var score = attributes.characters[highest].score;
-  var charUrl = attributes.characters[highest].charURL;
+  let countArr = Object.values(countObj);
+  let maxCount = Math.max(...countArr);
+  let scoreArr = Object.values(scoreObj);
+  let maxScore = Math.max(...scoreArr);
+var highestScoreName;
+var highestScoreNames = Object.keys(scoreObj);
+console.log("IN SCOREOBJ----->>>>" +JSON.stringify(Object.keys(scoreObj)));
+
+var highestCountName;
+var highestCountNames = Object.keys(countObj);
+for(i in scoreObj){
+console.log("IN SCOREOBJ----->>>>" +JSON.stringify(scoreObj[i]));
+  if(scoreObj[i]===maxScore){
+    highestScoreName = i;
+  }
+}
+for(i in countObj){
+  if(countObj[i]===maxCount){
+    highestCountName =i;
+  }
+}
+  var score = attributes.characters[highestScoreName].score;
+  var charUrl = attributes.characters[highestScoreName].charURL;
+  var charLevel = attributes.characters[highestScoreName].charLevel;
+  highestScoreName = helpers.capitalize_Words(highestScoreName);
   var stats = {
-    "topCharacter": highest,
-    "score": "Your highest score with: " + highest + " is " + score + ".<br> ",
+    "topCharacter": highestScoreName,
+    "score": "Your highest score is with: " + highestScoreName + " with the score being " + maxScore + " points.<br> ",
+    "count": "Your most played is with: " + highestCountName + " you have played them " + maxCount + " times.<br> ",
     "statString": "Your total wins, losses and ties are... <br>Wins: " + attributes.stats.wins + "<br>" +
       "Losses: " + attributes.stats.losses + "<br>Ties: " + attributes.stats.ties,
     "charURL": charUrl,
-    "speakOutput": "Your highest score with: " + highest + " is " + score + ". Your total Wins: " + attributes.stats.wins +
-      ", Losses: " + attributes.stats.losses + ", Ties: " + attributes.stats.ties
-  };
+    "speakOutput": "Your highest score is with: " + highestScoreName + " with the score being " + maxScore + " points. Your total Wins: " + attributes.stats.wins +
+      ", Losses: " + attributes.stats.losses + ", Ties: " + attributes.stats.ties,
+    "highestScore": maxScore,
+    "highestScoreLevel": charLevel
+    };
+  var fields = {};
+  fields.HighestScoreWith = highestScoreName;
+  fields.HighestScore = score;
+  fields.HighestScoreLevel = charLevel;
+  var record = await new Promise((resolve, reject) => {
+    base('PlayerCharts').update([{ 
+          "id": attributes.usersID,
+          "fields": fields
+      }], function(err, records) {
+              if (err) {console.error(err);return;}
+              console.log("UPDATED RECORD IN PROMISE = " + JSON.stringify(records[0]));
+              resolve(records[0]);
+          });
+  });
+  console.log("UPDATED RECORD = " + JSON.stringify(record));
   return stats;
 };

@@ -135,7 +135,7 @@
                   "items": [
                       {
                           "type": "Image",
-                          "source": "${payload.bodyTemplate2Data.image.sources[0].url}",
+                          "source": "${payload.mainData.properties.bgImage}",
                           "scale": "best-fill",
                           "width": "100vw",
                           "height": "100vh",
@@ -156,19 +156,18 @@
                                   "items": [
                                       {
                                           "type": "AlexaHeader",
-                                          "headerAttributionImage": "${payload.bodyTemplate2Data.logoUrl}",
-                                          "headerTitle": "${payload.bodyTemplate2Data.title}"
+                                          "headerTitle": "${payload.mainData.properties.headerTitle}"
                                       },
                                       {
                                           "type": "Text",
-                                          "text": "<b>${payload.bodyTemplate2Data.textContent.title.text}</b>",
+                                          "text": "<b>${payload.mainData.properties.title}</b>",
                                           "style": "textStyleBody",
                                           "width": "70vw",
                                           "textAlign": "center"
                                       },
                                       {
                                           "type": "Text",
-                                          "text": "${payload.bodyTemplate2Data.textContent.primaryText.text}",
+                                          "text": "${payload.mainData.properties.textbox}",
                                           "paddingTop": 20,
                                           "style": "textStylePrimary",
                                           "width": "70vw",
@@ -187,16 +186,16 @@
                   "items": [
                       {
                           "type": "Image",
-                          "source": "${payload.bodyTemplate2Data.backgroundImage.sources[0].url}",
+                          "source": "${payload.mainData.properties.bgImage}",
                           "scale": "best-fill",
+                          "overlayColor": "rgba(0, 0, 0, 0.6)",
                           "width": "100vw",
                           "height": "100vh",
                           "position": "absolute"
                       },
                       {
                           "type": "AlexaHeader",
-                          "headerTitle": "${payload.bodyTemplate2Data.title}",
-                          "headerAttributionImage": "${payload.bodyTemplate2Data.logoUrl}"
+                          "headerTitle": "${payload.mainData.properties.headerTitle}"
                       },
                       {
                           "type": "Container",
@@ -219,12 +218,12 @@
                                           "items": [
                                               {
                                                   "type": "Text",
-                                                  "text": "<b>${payload.bodyTemplate2Data.textContent.title.text}</b>",
+                                                  "text": "<b>${payload.mainData.properties.title}</b>",
                                                   "style": "textStyleBody"
                                               },
                                               {
                                                   "type": "Text",
-                                                  "text": "${payload.bodyTemplate2Data.textContent.primaryText.text}",
+                                                  "text": "${payload.mainData.properties.textbox}",
                                                   "spacing": "@spacingSmall",
                                                   "paddingTop": "40dp",
                                                   "paddingRight": "70dp",
@@ -238,7 +237,7 @@
                       },
                       {
                           "type": "AlexaFooter",
-                          "footerHint": "${payload.bodyTemplate2Data.hintText}"
+                          "footerHint": "${payload.mainData.properties.hintText}"
                       }
                   ]
               }
@@ -261,7 +260,7 @@
                   "items": [
                       {
                           "type": "Image",
-                          "source": "${payload.bodyTemplate2Data.image.sources[0].url}",
+                          "source": "${payload.mainData.properties.bgImage}",
                           "scale": "best-fill",
                           "width": "100vw",
                           "height": "100vh",
@@ -282,19 +281,18 @@
                                   "items": [
                                       {
                                           "type": "AlexaHeader",
-                                          "headerAttributionImage": "${payload.bodyTemplate2Data.logoUrl}",
-                                          "headerTitle": "${payload.bodyTemplate2Data.title}"
+                                          "headerTitle": "${payload.mainData.properties.headerTitle2}"
                                       },
                                       {
                                           "type": "Text",
-                                          "text": "<b>${payload.bodyTemplate2Data.textContent.title.text}</b>",
+                                          "text": "<b>${payload.mainData.properties.title2}</b>",
                                           "style": "textStyleBody",
                                           "width": "70vw",
                                           "textAlign": "center"
                                       },
                                       {
                                           "type": "Text",
-                                          "text": "${payload.bodyTemplate2Data.textContent.primaryText.text}",
+                                          "text": "${payload.mainData.properties.textbox2}",
                                           "paddingTop": 20,
                                           "style": "textStylePrimary",
                                           "width": "70vw",
@@ -313,7 +311,8 @@
                   "items": [
                       {
                           "type": "Image",
-                          "source": "${payload.bodyTemplate2Data.backgroundImage.sources[0].url}",
+                          "source": "${payload.mainData.properties.bgImage}",
+                          "overlayColor": "rgba(0, 0, 0, 0.6)",
                           "scale": "best-fill",
                           "width": "100vw",
                           "height": "100vh",
@@ -321,8 +320,7 @@
                       },
                       {
                           "type": "AlexaHeader",
-                          "headerTitle": "${payload.bodyTemplate2Data.title}",
-                          "headerAttributionImage": "${payload.bodyTemplate2Data.logoUrl}"
+                          "headerTitle": "${payload.mainData.properties.headerTitle2}"
                       },
                       {
                           "type": "Container",
@@ -344,12 +342,12 @@
                                           "items": [
                                               {
                                                   "type": "Text",
-                                                  "text": "<b>${payload.bodyTemplate2Data.textContent.title.text}</b>",
+                                                  "text": "<b>${payload.mainData.properties.title2}</b>",
                                                   "style": "textStyleBody"
                                               },
                                               {
                                                   "type": "Text",
-                                                  "text": "${payload.bodyTemplate2Data.textContent.primaryText.text}",
+                                                  "text": "${payload.mainData.properties.textbox2}",
                                                   "spacing": "@spacingSmall",
                                                   "paddingTop": "40dp",
                                                   "paddingRight": "70dp",
@@ -363,132 +361,7 @@
                       },
                       {
                           "type": "AlexaFooter",
-                          "footerHint": "${payload.bodyTemplate2Data.hintText}"
-                      }
-                  ]
-              }
-          ]
-      },
-      "Page3": {
-          "parameters": [
-              {
-                  "name": "hint",
-                  "type": "string"
-              }
-          ],
-          "items": [
-              {
-                  "when": "${viewport.shape == 'round'}",
-                  "type": "Container",
-                  "direction": "column",
-                  "width": "100vw",
-                  "height": "100vh",
-                  "items": [
-                      {
-                          "type": "Image",
-                          "source": "${payload.bodyTemplate2Data.image.sources[0].url}",
-                          "scale": "best-fill",
-                          "width": "100vw",
-                          "height": "100vh",
-                          "position": "absolute",
-                          "overlayColor": "rgba(0, 0, 0, 0.6)"
-                      },
-                      {
-                          "type": "ScrollView",
-                          "width": "100vw",
-                          "height": "100vh",
-                          "item": [
-                              {
-                                  "type": "Container",
-                                  "direction": "column",
-                                  "alignItems": "center",
-                                  "paddingLeft": "70dp",
-                                  "paddingRight": "70dp",
-                                  "items": [
-                                      {
-                                          "type": "AlexaHeader",
-                                          "headerAttributionImage": "${payload.bodyTemplate2Data.logoUrl}",
-                                          "headerTitle": "${payload.bodyTemplate2Data.title}"
-                                      },
-                                      {
-                                          "type": "Text",
-                                          "text": "<b>${payload.bodyTemplate2Data.textContent.title.text}</b>",
-                                          "style": "textStyleBody",
-                                          "width": "70vw",
-                                          "textAlign": "center"
-                                      },
-                                      {
-                                          "type": "Text",
-                                          "text": "${payload.bodyTemplate2Data.textContent.primaryText.text}",
-                                          "paddingTop": 20,
-                                          "style": "textStylePrimary",
-                                          "width": "70vw",
-                                          "textAlign": "center"
-                                      }
-                                  ]
-                              }
-                          ]
-                      }
-                  ]
-              },
-              {
-                  "type": "Container",
-                  "width": "100vw",
-                  "height": "100vh",
-                  "items": [
-                      {
-                          "type": "Image",
-                          "source": "${payload.bodyTemplate2Data.backgroundImage.sources[0].url}",
-                          "scale": "best-fill",
-                          "width": "100vw",
-                          "height": "100vh",
-                          "position": "absolute"
-                      },
-                      {
-                          "type": "AlexaHeader",
-                          "headerTitle": "${payload.bodyTemplate2Data.title}",
-                          "headerAttributionImage": "${payload.bodyTemplate2Data.logoUrl}"
-                      },
-                      {
-                          "type": "Container",
-                          "direction": "row",
-                          "paddingLeft": "60dp",
-                          "paddingRight": "72dp",
-                          "grow": 1,
-                          "shrink": 1,
-                          "height": "100vh",
-                          "items": [
-                              {
-                                  "type": "ScrollView",
-                                  "height": "100%",
-                                  "grow": 1,
-                                  "shrink": 1,
-                                  "item": [
-                                      {
-                                          "type": "Container",
-                                          "items": [
-                                              {
-                                                  "type": "Text",
-                                                  "text": "<b>${payload.bodyTemplate2Data.textContent.title.text}</b>",
-                                                  "style": "textStyleBody"
-                                              },
-                                              {
-                                                  "type": "Text",
-                                                  "text": "${payload.bodyTemplate2Data.textContent.primaryText.text}",
-                                                  "spacing": "@spacingSmall",
-                                                  "paddingTop": "40dp",
-                                                  "paddingRight": "70dp",
-                                                  "style": "textStylePrimary"
-                                              }
-                                          ]
-                                      }
-                                  ]
-                              }
-                          ]
-                      },
-                      {
-                          "type": "AlexaFooter",
-                          "footerHint": "${payload.bodyTemplate2Data.hintText}"
+                          "footerHint": "${payload.mainData.properties.hintText}"
                       }
                   ]
               }
@@ -508,9 +381,6 @@
                       },
                       {
                           "type": "Page2"
-                      },
-                      {
-                          "type": "Page3"
                       }
                   ]
               }
@@ -523,8 +393,7 @@
       ],
       "items": [
           {
-              "type": "MyPager",
-              "hint": "${payload.pagerTemplateData.properties.hintString}"
+              "type": "MyPager"
           }
       ]
   }

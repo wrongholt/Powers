@@ -156,7 +156,7 @@
                               "items": [
                                   {
                                       "type": "AlexaHeader",
-                                      "headerTitle": "${payload.mainData.properties.title}'s Statistics"
+                                      "headerTitle": "${payload.mainData.properties.headerTitle}'s Statistics"
                                   },
                                   {
                                       "type": "Text",
@@ -194,6 +194,7 @@
                   {
                       "type": "Image",
                       "source": "${payload.mainData.properties.bgImage}",
+                      "overlayColor": "rgba(0, 0, 0, 0.6)",
                       "scale": "best-fill",
                       "width": "100vw",
                       "height": "100vh",
@@ -201,7 +202,7 @@
                   },
                   {
                       "type": "AlexaHeader",
-                      "headerTitle": "${payload.mainData.properties.title}'s Statistics"                  
+                      "headerTitle": "${payload.mainData.properties.headerTitle}'s Statistics"                  
                     },
                   {
                       "type": "Container",
