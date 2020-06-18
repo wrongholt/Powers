@@ -2,7 +2,7 @@
 const variables = require('./variables');
 const https = require('https');
 const fs = require('fs');
-
+var _ = require('lodash');
 
 exports.CapitalizeTheFirstCharacter = (word) => {
   var newWord = word.charAt(0).toUpperCase() + word.substring(1);
@@ -18,7 +18,7 @@ exports.CapitalizeTheFirstCharacter = (word) => {
  .join(' ');
 };
 
-exports.httpGet = (base, filter, table) => {
+exports.httpGet = async (base, filter, table) => {
   var options = {
     host: "api.airtable.com",
     port: 443,
@@ -58,14 +58,9 @@ exports.supportsAPL = (handlerInput) => {
   return false;
 };
 
-exports.randomNoRepeats = (array) => {
-  var copy = array.slice(0);
-  if (copy.length < 1) {
-    copy = array.slice(0);
-  }
-  var index = Math.floor(Math.random() * copy.length);
-  var item = copy[index];
-  copy.splice(index, 1);
-  return item;
+exports.randomNoRepeats = async (array) => {
+  var shuffledArray = _.shuffle(array);
+  var pickOne = _.sample(shuffledArray);
+  return pickOne;
 };
 

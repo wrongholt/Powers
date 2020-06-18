@@ -5,6 +5,7 @@ const _ = require('lodash');
 const {
   DynamoDbPersistenceAdapter
 } = require('ask-sdk-dynamodb-persistence-adapter');
+var Airtable = require('airtable');
 
 const mainAPL = require('./documents/main.json');
 const listAPL = require('./documents/powerslist');
@@ -21,10 +22,12 @@ const dynamoDbPersistenceAdapter = new DynamoDbPersistenceAdapter({
   tableName: 'powers'
 });
 const variables = require('./variables');
-var Airtable = require('airtable');
-var base = new Airtable({
-  apiKey: variables.ApiAirtable
-}).base('appoBlEf8I1VQdU3r');
+
+
+var helpHints = ["If you wish to look at your stats just say my stats or statistics.","Have you play for a bit if so check out the leaderboards by saying rankings or leaderboards.",
+"Did you know there is a move list just ask for it, after you picked your character.", "Are you ready to rumble, if so say lets fight or pick character." ];
+var goodbyes = ["Don't ever tell anyone anything. If you do, you start missing everybody.","Bye Felicia!","It is so hard to leave—until you leave. And then it is the easiest thing in the world","Later Gator, after awhile crocodile",
+"Adios amigos!","Thanks for coming, come back soon!","I'll see you in another life. When we are both cats.","You've changed me forever. And I'll never forget you.","This is not a goodbye, this is a thank you."];
 
 const LaunchRequestHandler = {
   canHandle(handlerInput) {
@@ -46,14 +49,16 @@ const LaunchRequestHandler = {
     var bgImage = await getRandomMainBGImage();
 
     if (Object.keys(attributes).length === 0) {
-      speakOutput = '<break strength="strong"/><p>Welcome, to <phoneme alphabet="ipa" ph="pɑwɚrs">Powers</phoneme>. I am  <say-as interpret-as="spell-out">G34XY</say-as>, a <phoneme alphabet="ipa" ph="pɑwɚrs">Powers</phoneme> fighter helper. </p><p>I am here to help you in any way possible through out any fight you may ask for my help by saying <break strength="strong"/> move list <break strength="strong"/>or bot help.</p> I will try to help in any way possible.<break strength="strong"/><amazon:emotion name="excited" intensity="high"> Except, I cannot fight for you!!</amazon:emotion> That is not in my contract you hear me <break strength="strong"/><emphasis level="strong">I do not fight!</emphasis>  Let\'s start by getting your name, we use this to keep track of your stats and how you are doing on the leaderboard. Just say, my name is.';
+      speakOutput = '<break strength="strong"/><p>Welcome, to <phoneme alphabet="ipa" ph="pɑwɚrs">Powers</phoneme>. I am  <say-as interpret-as="spell-out">G34XY</say-as>, a <phoneme alphabet="ipa" ph="pɑwɚrs">Powers</phoneme> fighter helper. </p><p>I am here to help you in any way possible through out any fight you may ask for my help by saying <break strength="strong"/> move list <break strength="strong"/>or bot help, with this I can show you the possible moves you can than say in the fight.</p> I will try to help in any way possible.<break strength="strong"/><amazon:emotion name="excited" intensity="high"> Except, I cannot fight for you!!</amazon:emotion> That is not in my contract you hear me <break strength="strong"/><emphasis level="strong">I do not fight!</emphasis>  Let\'s start by getting your name, we use this to keep track of your stats and how you are doing on the leaderboard. Just say, my name is.';
     } else {
       name = attributes.name;
       var launch2 = ['<p>Welcome back to Powers, ' + helpers.capitalize_Words(name) + '. </p> <p>Would you like to view your rankings or pick your character to fight?</p>',
         '<p>Hey you came back!</p> <p>This is great news.</p> <p>What would you like to do fight or look at your rankings?</p>',
-        '<p>Welcome back! You know, I am not the only bot here, there is another that helps me out from time to time, her name is <say-as interpret-as="spell-out">A73XA</say-as>.</p> <p>Now would you like to fight again or view your rankings?</p> '
+        '<p>Hello again, can\'t keep away can you, I was told it was addicting. You can start by saying pick character or view my rankings or statistics.</p>',
+        '<p>Hello again, ' + helpers.capitalize_Words(name) + ' did you come back to kick butt and take names? If you wish to start taking names or kicking butt, just say pick character or view leaderboards or stats.</p>',
+        '<p>Welcome back! You know, I am not the only bot here, there is another that helps me out from time to time, her name is <say-as interpret-as="spell-out">A73XA</say-as>.</p> <p>Now would you like to fight or view your stats or leaderboards?</p> '
       ];
-      speakOutput = helpers.randomNoRepeats(launch2);
+      speakOutput = await helpers.randomNoRepeats(launch2);
     }
     if (!sessionAttributes.hasOwnProperty('characterRecords')) {
       sessionAttributes.characterRecords = [];
@@ -73,14 +78,16 @@ const LaunchRequestHandler = {
       }
       i++;
     }
-    if (sessionAttributes.previousIntent === "stats" || sessionAttributes.previousIntent === "standings") {
+    if(sessionAttributes.previousIntent ==="practiceRoundIntent"){
+      speakOutput = 'You have now recieved your certification of practice mode, to get into a real game we start by selecting your character. To do that say, select character.';
+    }else if (sessionAttributes.previousIntent === "stats" || sessionAttributes.previousIntent === "standings") {
       speakOutput = "I am sorry you need to play more to get your statistics.";
     } else if (sessionAttributes.previousIntent === "CopperXP") {
-      speakOutput = "Outstanding you just bought the Copper Experience Pack. If you wish to use them just say, Use Copper Pack or Use Copper Pack on Character name.";
+      speakOutput = "Outstanding you just bought the Copper Experience Pack. If you wish to use them just say, Use Copper Pack.";
     } else if (sessionAttributes.previousIntent === "SilverXP") {
-      speakOutput = "Outstanding you just bought the Silver Experience Pack. If you wish to use them just say, Use Silver Pack or Use Silver Pack on Character name.";
+      speakOutput = "Outstanding you just bought the Silver Experience Pack. If you wish to use them just say, Use Silver Pack.";
     } else if (sessionAttributes.previousIntent === "GoldXP") {
-      speakOutput = "Outstanding you just bought the Gold Experience Pack. If you wish to use them just say, Use Gold Pack or Use Gold Pack on Character name.";
+      speakOutput = "Outstanding you just bought the Gold Experience Pack. If you wish to use them just say, Use Gold Pack.";
     }
     sessionAttributes.charactersArray = charactersArray;
     await saveAttributes(handlerInput, attributes);
@@ -120,6 +127,9 @@ const NameIntentHandler = {
       Alexa.getIntentName(handlerInput.requestEnvelope) === 'NameIntent';
   },
   async handle(handlerInput) {
+    var base = new Airtable({
+      apiKey: variables.ApiAirtable
+    }).base('appoBlEf8I1VQdU3r');
     var attributes = await getAttributes(handlerInput);
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
@@ -143,7 +153,7 @@ const NameIntentHandler = {
       } else if (usersCustName) {
         userName = usersCustName;
       }
-
+      userName = helpers.capitalize_Words(userName);
       
       await new Promise((resolve, reject) => {
         base('PlayerCharts').create([{
@@ -164,24 +174,91 @@ const NameIntentHandler = {
       var theBase = "appoBlEf8I1VQdU3r";
       var record = await helpers.httpGet(theBase, "&filterByFormula=%7BuserID%7D%3D%22" + attributes.nameid + "%22", 'PlayerCharts');
       var userRecord = record.records;
-      console.log("THE RECORD IS" + userRecord);
       attributes.usersID = userRecord[0].fields.RecordId;
       
       await saveAttributes(handlerInput, attributes);
-      var nameSpeak = ['Perfect, ' + helpers.capitalize_Words(userName) + ", now lets pick your character, just say pick character.",
-        'Outstanding, I have saved your name for rankings and to be more personable. Now lets pick your character, ' + helpers.capitalize_Words(userName) + '. Just say; pick character.',
-        'Well hello there, ' + helpers.capitalize_Words(userName) + '! It is nice to meet you. Next, you got to pick a character you can do that by saying, pick character.'
-      ];
-      const speakOutput = helpers.randomNoRepeats(nameSpeak);
-
-
-      return handlerInput.responseBuilder
-        .speak(helpers.speechPolly(speakOutput))
-        .reprompt(helpers.speechPolly(speakOutput))
-        .getResponse();
+     return PracticeRoundIntentHandler.handle(handlerInput);
     }
   }
 };
+
+const PracticeRoundIntentHandler = {
+  canHandle(handlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === 'PracticeRoundIntent';
+  },
+  async handle(handlerInput) {
+    var attributes = await getAttributes(handlerInput);
+    let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    sessionAttributes.previousIntent = sessionAttributes.currentIntent;
+    sessionAttributes.currentIntent = "practiceRoundIntent";
+    attributes.isPractice = true;
+    var characters = sessionAttributes.characterRecords;
+    if (!sessionAttributes.hasOwnProperty('practicePlayer')) {
+      sessionAttributes.practicePlayer = {};
+    }
+    if (!sessionAttributes.hasOwnProperty('practiceComputer')) {
+      sessionAttributes.practiceComputer = {};
+    }
+    sessionAttributes.practicePlayer =  await findCharacterInData(characters, 'Electric Mean');
+    sessionAttributes.practiceComputer = await findCharacterInData(characters, 'Sharpie Sharp');
+    var userName = attributes.name;
+    var practiceSteps;
+    console.log(JSON.stringify(sessionAttributes));
+    if(!sessionAttributes.hasOwnProperty("practiceSteps")){
+      sessionAttributes.practiceSteps = 0;
+      practiceSteps = sessionAttributes.practiceSteps;
+    }else{
+      practiceSteps = sessionAttributes.practiceSteps;
+    }
+    var speakOutput;
+    var practiceSpeak = ['Perfect, ' + helpers.capitalize_Words(userName) + ", I have randomly chosen your character and an opponent, lets start out by teaching you, the first move, which is, light attack. Try saying, light attack.",
+        'Excellent!! The light attack move is the only move that you can use without your opponent possibly blocking you. So keep that in mind when you use other moves. Now for your next attack move. Try saying, heavy attack.',
+        'You are a quick learner! Next, lets look at the move list and try new attack move you haven\'t done yet. Say, move list.',
+        'You have passed all the tests so far. One important thing to know is that you can block, by saying, block. Let\'s try it now.',
+        'One last important thing, is that you gain power by fighting and when you have enough power, you can use your power move. You will be notified when your power move is available, to activate it just say, power move.' + sessionAttributes.practicePlayer.POWER_AUDIO
+      ];
+      if(practiceSteps === 5){
+        return LaunchRequestHandler.handle(handlerInput);
+      }
+        speakOutput = practiceSpeak[practiceSteps];         
+        practiceSteps++;
+        
+        sessionAttributes.practiceSteps = practiceSteps;
+     
+      await saveAttributes(handlerInput,attributes);
+   
+
+      if (helpers.supportsAPL(handlerInput)) {
+        var bgImage = await getRandomMainBGImage();
+        return handlerInput.responseBuilder
+          .speak(helpers.speechPolly(speakOutput))
+          .reprompt(helpers.speechPolly(speakOutput))
+          .addDirective({
+            type: 'Alexa.Presentation.APL.RenderDocument',
+            version: '1.3',
+            document: fightAPL,
+            datasources: {
+              "mainData": {
+                "type": "object",
+                "properties": {
+                  "bgImage": bgImage,
+                  "powerPlayer": sessionAttributes.practicePlayer.PWR_IMG,
+                  "powerComputer": sessionAttributes.practiceComputer.PWR_IMG
+                }
+              }
+            }
+          })
+          .getResponse();
+      } else {
+        return handlerInput.responseBuilder
+          .speak(helpers.speechPolly(speakOutput))
+          .reprompt(helpers.speechPolly(speakOutput))
+          .withSimpleCard("Fight", speakOutput)
+          .getResponse();
+      }
+    }
+  };
 
 const CharactersSelectionScreenHandler = {
   canHandle(handlerInput) {
@@ -195,38 +272,47 @@ const CharactersSelectionScreenHandler = {
     var theBase = "appoBlEf8I1VQdU3r";
     var characterdata = await helpers.httpGet(theBase, '', 'Characters');
     var characterRecords = characterdata.records;
+    var attributes = await getAttributes(handlerInput);
+    
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "characterSelection";
-    var attributes = await getAttributes(handlerInput);
     if (Object.keys(attributes).length === 0) {
       return LaunchRequestHandler.handle(handlerInput);
     }
+    attributes.isPractice = false;
+    await saveAttributes(handlerInput,attributes);
     if (!sessionAttributes.hasOwnProperty('characterRecords')) {
       sessionAttributes.characterRecords = [];
     }
+    
     sessionAttributes.characterRecords = characterRecords;
     var charactersArray = [];
     for (var i = 0; i < characterRecords.length;) {
       charactersArray.push(characterRecords[i].fields.Name);
       i++;
     }
-    sessionAttributes.charactersArray = charactersArray;
+    sessionAttributes.charactersArray2 = charactersArray;
     if (charactersArray.length > 2) {
-      charactersArray = charactersArray.slice(1).join(', <break strength="strong"/>').replace(/, ([^,]*)$/, ' or $1');
+      charactersArray = charactersArray.slice(1).join(', <break time=".4s"/>').replace(/, ([^,]*)$/, '<break time=".4s"/> or<break time=".3s"/> $1');
     }
-    var whoToFight = ["Alright, lets go " + sessionAttributes.playerPower + "! Now who do you want to fight, " + sessionAttributes.charactersArray,
-      "Are you serious, " + sessionAttributes.playerPower + " is my favorite! Who would you like to fight, " + sessionAttributes.charactersArray + "?",
-      "Everyone, we got " + sessionAttributes.playerPower + " in the house! Who are they going to fight against, " + sessionAttributes.charactersArray + "?",
+    sessionAttributes.charactersArray = charactersArray;
+    var whoToFight = ["Alright, lets go " + sessionAttributes.playerPower + "! Now who do you want to fight, " + sessionAttributes.charactersArray + "? You may say, the characters name or random character.",
+      "Are you serious, " + sessionAttributes.playerPower + " is my favorite! Who would you like to fight, " + sessionAttributes.charactersArray + "? Don't forget that you can say the characters name or random character.",
+      "Everyone, we got " + sessionAttributes.playerPower + " in the house! Who are they going to fight against, " + sessionAttributes.charactersArray + "? Did I tell you, that you may say the characters name or random character.",
     ];
-    var speakOutput = helpers.randomNoRepeats(whoToFight);
+    var speakOutput = await helpers.randomNoRepeats(whoToFight);
     if (!sessionAttributes.playerPower) {
-      speakOutput = "You can pick from any of these characters: " + charactersArray + '!';
+      var speakArray = ["You can pick from any of these characters, just say thier name or you can have me choose for you by saying choose for me: " + charactersArray + '!',
+    "Are you ready? You can pick from these characters, just by saying their name or you could say choose for me and I will grab someone by random. The characters are: "+ charactersArray + '!',
+  "Who's ready to rumble!? I am not, but I am not also a character you can choose, those are: " + charactersArray + ". You may also say, random character and I will go and select the best random character you could get!"];
+      speakOutput = await helpers.randomNoRepeats(speakArray);
     }
 
     if (helpers.supportsAPL(handlerInput)) {
       if (Alexa.getRequestType(handlerInput.requestEnvelope) === 'Alexa.Presentation.APL.UserEvent' && handlerInput.requestEnvelope.request.arguments[0] === 'ItemSelected') {
         var character = handlerInput.requestEnvelope.request.arguments[2];
+        console.log("THE CHARACTER SELECTION---->>>" + character);
         await characterSelector(handlerInput, characterRecords, character);
         return CharactersSelectionScreenTwoHandler.handle(handlerInput);
       }
@@ -261,13 +347,16 @@ const CharactersSelectionScreenTwoHandler = {
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "characterSelectionTwo";
-    var whoToFight = ["Alright, lets go " + sessionAttributes.playerPower + "! Now who do you want to fight, " + sessionAttributes.charactersArray,
-      "Are you serious, " + sessionAttributes.playerPower + " is my favorite! Who would you like to fight, " + sessionAttributes.charactersArray + "?",
-      "Everyone, we got " + sessionAttributes.playerPower + " in the house! Who are they going to fight against, " + sessionAttributes.charactersArray + "?",
+    var whoToFight = ["Alright, lets go " + sessionAttributes.playerPower + "! Now who do you want to fight, " + sessionAttributes.charactersArray + "? You may say, the characters name, or random character.",
+      "Are you serious, " + sessionAttributes.playerPower + " is my favorite! Who would you like to fight, " + sessionAttributes.charactersArray + "? Don't forget, that you can say the characters name, or random character.",
+      "Everyone, we got " + sessionAttributes.playerPower + " in the house! Who are they going to fight against, " + sessionAttributes.charactersArray + "? Did I tell you, that you may say the characters name, or random character.",
     ];
-    var speakOutput = helpers.randomNoRepeats(whoToFight);
+    var speakOutput = await helpers.randomNoRepeats(whoToFight);
     if (!sessionAttributes.playerPower) {
-      speakOutput = "You can pick from any of these characters: " + charactersArray + '!';
+      var speakArray = ["You can pick from any of these characters, just say thier name or you can have me choose for you by saying choose for me: " + charactersArray + '!',
+    "Are you ready? You can pick from these characters, just by saying their name or you could say choose for me and I will grab someone by random. The characters are: "+ charactersArray + '!',
+  "Who's ready to rumble!? I am not, but I am not also a character you can choose, those are: " + charactersArray + ". You may also say, random character and I will go and select the best random character you could get!"];
+      speakOutput = await helpers.randomNoRepeats(speakArray);
     }
 
     if (helpers.supportsAPL(handlerInput)) {
@@ -319,19 +408,18 @@ const CharacterSelectedHandler = {
   }
 };
 
-const EnemyRandomSelectedHandler = {
+const RandomSelectedHandler = {
   canHandle(handlerInput) {
     return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
       Alexa.getIntentName(handlerInput.requestEnvelope) === 'RandomCharacterSelectedIntent';
   },
   async handle(handlerInput) {
-    var speakOutput;
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "randomSelected";
     var characters = sessionAttributes.characterRecords;
-    var charactersArray = sessionAttributes.charactersArray;
-    var randomCharacter = helpers.randomNoRepeats(charactersArray);
+    var charactersArray = sessionAttributes.charactersArray2;
+    var randomCharacter = await helpers.randomNoRepeats(charactersArray);
     if (!sessionAttributes.playerPower) {
       await characterSelector(handlerInput, characters, randomCharacter);
       sessionAttributes.randomCharacter = randomCharacter;
@@ -352,10 +440,9 @@ const FightStartHandler = {
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "fightStart";
-    console.log("IN FIGHT START HANDLER COMPUTER IS----->>>>" + JSON.stringify(sessionAttributes));
     var speakOutput;
     if (!sessionAttributes.hasOwnProperty("FightStart")) {
-      speakOutput = sessionAttributes.playerPower + ' <phoneme alphabet="ipa" ph="versus">VS</phoneme> ' + sessionAttributes.enemyPower + "! Ok, next just say a move, or say move list, to access it.  Ready Fight!!";
+      speakOutput = "To start the fight, say either an attack move or move list to access it. " + sessionAttributes.playerPower + ' <sub alias="versus">VS</sub> ' + sessionAttributes.enemyPower + "! Ready Fight!!";
       sessionAttributes.FightStart = true;
     } else {
       var fightReturn = ["Let's get back to the fight, just say <break strength='strong'/>a<break strength='strong'/> move.",
@@ -363,7 +450,7 @@ const FightStartHandler = {
         "So someone told me, to tell you, to just say,<break strength='strong'/>a<break strength='strong'/> move to fight.",
         "Light attack or Heavy attack are universal fight moves you can start with those if you don't remember <break strength='strong'/>a<break strength='strong'/> fight move."
       ];
-      speakOutput = helpers.randomNoRepeats(fightReturn);
+      speakOutput = await helpers.randomNoRepeats(fightReturn);
 
     }
 
@@ -407,16 +494,20 @@ const PlayerFightHandler = {
       Alexa.getIntentName(handlerInput.requestEnvelope) === 'PlayerFightIntent';
   },
   async handle(handlerInput) {
+    var attributes = await getAttributes(handlerInput);
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "fightHandler";
+    if (attributes.isPractice === true){
+      return PracticeRoundIntentHandler.handle(handlerInput);
+    }
+    
     var speakOutput;
     var audio;
     var move = handlerInput.requestEnvelope.request.intent.slots.Move.value;
-    console.log("IN PLAYERFIGHTHANDLER AND MOVE IS ---->>>>" + JSON.stringify(move));
 
     if (move === "dodge" || move === "block" || move === "dip" || move === "duck" || move === "dive" || move === "blocked") {
-      speakOutput = playerBlocked(handlerInput, move);
+      speakOutput = await playerBlocked(handlerInput, move);
     } else {
       if (move !== "use power move" || move !== "power move") {
         await fightingPlayer(handlerInput, move);
@@ -432,7 +523,7 @@ const PlayerFightHandler = {
         }
       }
       if (sessionAttributes.playerPowerAttackAvail === true & move === "use power move" || sessionAttributes.playerPowerAttackAvail === true & move === "power move") {
-        usePowerAttack(handlerInput, sessionAttributes.player, "player");
+        await usePowerAttack(handlerInput, sessionAttributes.player, "player");
         audio = sessionAttributes.player.POWER_AUDIO;
         if (sessionAttributes.player.Name === "Charity") {
           speakOutput = audio + "You just used " + sessionAttributes.player.POWER_ATK + " healing yourself for " + sessionAttributes.player.POWER_DMG + " points! You now have " + sessionAttributes.playersHealth + " points!";
@@ -455,7 +546,7 @@ const PlayerFightHandler = {
         }
         
       } else if (sessionAttributes.compPowerAttackAvail === true) {
-        usePowerAttack(handlerInput, sessionAttributes.computer, "computer");
+        await usePowerAttack(handlerInput, sessionAttributes.computer, "computer");
         audio = sessionAttributes.computer.POWER_AUDIO;
         if (sessionAttributes.computer.Name === "Charity") {
           speakOutput += audio + " Your opponent just used " + sessionAttributes.computer.POWER_ATK + " healing herself for " + sessionAttributes.player.POWER_DMG + " points! They now have " + sessionAttributes.computersHealth + " points!";
@@ -473,7 +564,7 @@ const PlayerFightHandler = {
     }
     if (helpers.supportsAPL(handlerInput)) {
       var bgImage = sessionAttributes.bgImageFighting;
-      healthBar(handlerInput);
+      await healthBar(handlerInput);
       return handlerInput.responseBuilder
         .speak(helpers.speechPolly(speakOutput))
         .reprompt(helpers.speechPolly(speakOutput))
@@ -525,18 +616,18 @@ const FightEndHandler = {
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "fightEnd";
     if (sessionAttributes.computerWin === false && sessionAttributes.playerWin === false) {
-      speakOutput =  "You just used the " +sessionAttributes.playerMoveData.Name + " move and your opponent used "+ sessionAttributes.computerMoveData.Name + " and it ended in a tie, you will get them next time!";
+      speakOutput =  "You just used the " +sessionAttributes.playerMoveData.Name + " move and your opponent used "+ sessionAttributes.computerMoveData.Name + " and it ended in a tie, you will get them next time! Say, lets fight again or you can say, view my stats.";
       displayOutput = "Wow, it was a tie, you will get them next time!";
       bgColor = "#eeeeee";
       color = "#0E2773";
     } else if (sessionAttributes.playerWin === false) {
-      speakOutput = "You just used the " +sessionAttributes.playerMoveData.Name + " move and your opponent used "+ sessionAttributes.computerMoveData.Name + " and sorry to say, but you lost, there is always next time!";
+      speakOutput = "You just used the " +sessionAttributes.playerMoveData.Name + " move and your opponent used "+ sessionAttributes.computerMoveData.Name + " and sorry to say, but you lost, there is always next time! Say, lets fight again to try one more time";
       displayOutput = "Sorry, but you lost, there is always next time!";
       bgColor = "#BF1736";
       color = "#0E2773";
     } else if (sessionAttributes.computerWin === false) {
-      speakOutput = "You just used the " +sessionAttributes.playerMoveData.Name + " move and your opponent used "+ sessionAttributes.computerMoveData.Name + ". The results are in, you won!";
-      displayOutput = "Nice you won!";
+      speakOutput = "You just used the " +sessionAttributes.playerMoveData.Name + " move and your opponent used "+ sessionAttributes.computerMoveData.Name + ". The results are in, you won! Say, lets fight again to play another round.";
+      displayOutput = "Nice you won! Want to try again?";
       bgColor = "#0E2773";
       color = "#BF1736";
     }
@@ -557,7 +648,8 @@ const FightEndHandler = {
                 "bgImage": bgImage,
                 "bgColor": bgColor,
                 "color": color,
-                "message": displayOutput
+                "message": displayOutput,
+                
               }
             }
           }
@@ -579,38 +671,74 @@ const MoveListHandler = {
       Alexa.getIntentName(handlerInput.requestEnvelope) === 'MoveListIntent';
   },
   async handle(handlerInput) {
-    var speakOutput = moveListSpeak(handlerInput);
+    var speakOutput;
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "moveList";
-    if (helpers.supportsAPL(handlerInput)) {
-      return handlerInput.responseBuilder
-        .speak(helpers.speechPolly(speakOutput))
-        .reprompt(helpers.speechPolly(speakOutput))
-        .addDirective({
-          type: 'Alexa.Presentation.APL.RenderDocument',
-          version: '1.3',
-          document: moveListAPL,
-          datasources: {
-            "mainData": {
-              "type": "object",
-              "properties": {
-                "powerPlayer": sessionAttributes.player.PWR_IMG,
-                "powerComputer": sessionAttributes.computer.PWR_IMG,
-                "powerName": sessionAttributes.player.Name,
-                "moveList": moveList(handlerInput)
 
+    if(sessionAttributes.previousIntent === "practiceRoundIntent"){
+      speakOutput = await moveListSpeak(handlerInput) + " Now try saying one of the attack moves you haven't done?";
+      if (helpers.supportsAPL(handlerInput)) {
+        return handlerInput.responseBuilder
+          .speak(helpers.speechPolly(speakOutput))
+          .reprompt(helpers.speechPolly(speakOutput))
+          .addDirective({
+            type: 'Alexa.Presentation.APL.RenderDocument',
+            version: '1.3',
+            document: moveListAPL,
+            datasources: {
+              "mainData": {
+                "type": "object",
+                "properties": {
+                  "powerPlayer": sessionAttributes.practicePlayer.PWR_IMG,
+                  "powerComputer": sessionAttributes.practiceComputer.PWR_IMG,
+                  "powerName": sessionAttributes.practicePlayer.Name,
+                  "moveList": await moveList(handlerInput)
+  
+                }
               }
             }
-          }
-        })
-        .getResponse();
-    } else {
-      return handlerInput.responseBuilder
-        .speak(helpers.speechPolly(speakOutput))
-        .reprompt()
-        .getResponse();
+          })
+          .getResponse();
+      } else {
+        return handlerInput.responseBuilder
+          .speak(helpers.speechPolly(speakOutput))
+          .reprompt()
+          .getResponse();
+      }
+    }else{
+      speakOutput = await moveListSpeak(handlerInput);
+      if (helpers.supportsAPL(handlerInput)) {
+        return handlerInput.responseBuilder
+          .speak(helpers.speechPolly(speakOutput))
+          .reprompt(helpers.speechPolly(speakOutput))
+          .addDirective({
+            type: 'Alexa.Presentation.APL.RenderDocument',
+            version: '1.3',
+            document: moveListAPL,
+            datasources: {
+              "mainData": {
+                "type": "object",
+                "properties": {
+                  "powerPlayer": sessionAttributes.player.PWR_IMG,
+                  "powerComputer": sessionAttributes.computer.PWR_IMG,
+                  "powerName": sessionAttributes.player.Name,
+                  "moveList": await moveList(handlerInput)
+  
+                }
+              }
+            }
+          })
+          .getResponse();
+      } else {
+        return handlerInput.responseBuilder
+          .speak(helpers.speechPolly(speakOutput))
+          .reprompt()
+          .getResponse();
+      }
     }
+
+    
   }
 };
 
@@ -652,7 +780,8 @@ const YourStatsHandler = {
                 "headerTitle": playerName,
                 "title": statsObject.topCharacter,
                 "subtitle": statsObject.topCharacter,
-                "primaryText": statsObject.score + statsObject.count + statsObject.statString
+                "primaryText": statsObject.score + statsObject.count + statsObject.statString,
+                "hintText": await helpers.randomNoRepeats(helpHints)
 
               }
             }
@@ -684,22 +813,21 @@ const YourStandingsHandler = {
       return LaunchRequestHandler.handle(handlerInput);
     }
     var theBase = "appoBlEf8I1VQdU3r";
-    var playerData = await helpers.httpGet(theBase,"","PlayerCharts");
+    var playerData = await helpers.httpGet(theBase,"&maxRecords=10","PlayerCharts");
     var playerRecords = playerData.records;
-    var playersString;
-    var playersString2;
+    var playersString="";
+    var playersString2="";
     
     for (var i in playerRecords) {
       var theNumber = 1;
       if(playerRecords[i].fields.HighestScoreLevel === statsObject.highestScoreLevel){
       playersString2 += theNumber + ". " + playerRecords[i].fields.userID +": " +playerRecords[i].fields.HighestScore + " Level: "+playerRecords[i].fields.HighestScoreLevel + "<br>";
       }
-      for(var j = 0; j===10;j++){
+      if(playerRecords[i].fields.HighestScoreLevel){
         playersString += theNumber + ". " + playerRecords[i].fields.userID +": " +playerRecords[i].fields.HighestScore + " Level: "+playerRecords[i].fields.HighestScoreLevel + "<br>";
         speakOutput += theNumber + ". " + playerRecords[i].fields.userID +": " +playerRecords[i].fields.HighestScore + ", Level: "+playerRecords[i].fields.HighestScoreLevel + "";
-        console.log("WITHIN THE PLAYERRECORDS LOOP---->>>" + playersString);
-      }
-      theNumber++;
+      }   
+      theNumber = theNumber + 1;
       }
     var title2 = "Your top score: "+statsObject.highestScore + " at level "+ statsObject.highestScoreLevel + ". ";
     var title1 = "Your top score, "+statsObject.highestScore + " with "+ statsObject.topCharacter + ". ";
@@ -722,7 +850,8 @@ const YourStandingsHandler = {
                 "textbox": playersString,
                 "headerTitle2": "Level Leaderboard",
                 "title2": title2,
-                "textbox2": playersString2
+                "textbox2": playersString2,
+                "hintText": await helpers.randomNoRepeats(helpHints)
 
               }
             }
@@ -792,7 +921,7 @@ const UseExperienceOnCharacterPackHandler = {
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "useExperiencePack";
 
-    character = characterFilter(character);
+    character = await characterFilter(character);
     character = helpers.capitalize_Words(character);
     if(sessionAttributes.previousIntent === "useExperiencePack"){
 
@@ -850,14 +979,13 @@ const GetListofISPsHandler = {
     var speakOutput;
     const locale = handlerInput.requestEnvelope.request.locale;
     const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
-    const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    var sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "listOfISPs";
     return ms.getInSkillProducts(locale)
       .then(async function checkForProductAccess(result) {
           const products = getAllProducts(result.inSkillProducts);
           if (products && products.length > 0) {
-            console.log("GET SKILL PRODUCTS------>>>>>" + JSON.stringify(getSpeakableListOfProducts(products)));
             speakOutput = "The following are available for purchase: " + getSpeakableListOfProducts(products) + '. To purchase any of the products just say I want to buy, then the product name.';
             return handlerInput.responseBuilder
               .speak(helpers.speechPolly(speakOutput))
@@ -887,7 +1015,7 @@ const ExpansionIntentHandler = {
   },
   async handle(handlerInput) {
     console.log("<=== HINTINTENT HANDLER ===>");
-    const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    var sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     var attributes = await getAttributes(handlerInput);
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "BuyIntent";
@@ -895,7 +1023,6 @@ const ExpansionIntentHandler = {
 
     const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
     const locale = handlerInput.requestEnvelope.request.locale;
-    console.log("GET SKILL PRODUCTS------>>>>>" + JSON.stringify(ms.getInSkillProducts(locale)));
     var productName = handlerInput.requestEnvelope.request.intent.slots.ProductName.value;
 
     return await ms.getInSkillProducts(locale).then(async function checkForProductAccess(result) {
@@ -939,14 +1066,13 @@ const SuccessfulPurchaseResponseHandler = {
     console.log("<=== SuccessfulPurchaseResponse HANDLER ===>");
 
     const locale = handlerInput.requestEnvelope.request.locale;
-    const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    var sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
     const productId = handlerInput.requestEnvelope.request.payload.productId;
     var attributes = await getAttributes(handlerInput);
     var speakOutput;
     return ms.getInSkillProducts(locale).then(async function (res) {
       let product = res.inSkillProducts.find(record => record.productId == productId);
-      console.log("IN SUCCESS---->>>> " + JSON.stringify(product));
       if (!attributes.hasOwnProperty("copperXP")) {
         attributes.copperXP = 0;
       }
@@ -959,7 +1085,6 @@ const SuccessfulPurchaseResponseHandler = {
       if (product != undefined) {
         if (product.referenceName === "CopperXP") {
           attributes.copperXP += 5;
-          console.log("IN COPPER" + attributes.copperXP);
           await saveAttributes(handlerInput, attributes);
           sessionAttributes.previousIntent = sessionAttributes.currentIntent;
           sessionAttributes.currentIntent = "CopperXP";
@@ -1008,7 +1133,7 @@ const UnsuccessfulPurchaseResponseHandler = {
     console.log("<=== UnsuccessfulPurchaseResponse HANDLER ===>");
 
     const locale = handlerInput.requestEnvelope.request.locale;
-    const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    var sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
     const productId = handlerInput.requestEnvelope.request.payload.productId;
 
@@ -1027,12 +1152,15 @@ const HelpIntentHandler = {
     return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
       Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.HelpIntent';
   },
-  handle(handlerInput) {
-    const speakOutput = 'You can say hello to me! How can I help?';
+  async handle(handlerInput) {
+    var sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    sessionAttributes.previousIntent = sessionAttributes.currentIntent;
+    sessionAttributes.currentIntent = "helpIntent";
+    const speakOutput = await helpers.randomNoRepeats(helpHints);
 
     return handlerInput.responseBuilder
-      .speak(helpers.speechPolly(speakOutput))
-      .reprompt(helpers.speechPolly(speakOutput))
+      .speak(speakOutput)
+      .reprompt(speakOutput)
       .getResponse();
   }
 };
@@ -1042,8 +1170,8 @@ const CancelAndStopIntentHandler = {
       (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.CancelIntent' ||
         Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.StopIntent');
   },
-  handle(handlerInput) {
-    const speakOutput = 'Goodbye!';
+  async handle(handlerInput) {
+    const speakOutput = await helpers.randomNoRepeats(goodbyes);
     return handlerInput.responseBuilder
       .speak(helpers.speechPolly(speakOutput))
       .getResponse();
@@ -1055,7 +1183,7 @@ const SessionEndedRequestHandler = {
     return Alexa.getRequestType(handlerInput.requestEnvelope) === 'SessionEndedRequest';
   },
   handle(handlerInput) {
-    // Any cleanup logic goes here.
+    console.log("<<<SESSION ENDED>>>>>");
     return handlerInput.responseBuilder.getResponse();
   }
 };
@@ -1081,6 +1209,7 @@ const ErrorHandler = {
     return true;
   },
   handle(handlerInput, error) {
+    console.log("<=== handler/error.js ===>");
     console.log(`~~~~ Error handled: ${error.stack}`);
     const speakOutput = `Sorry, I had trouble doing what you asked. Please try again.`;
 
@@ -1097,8 +1226,9 @@ const FallbackIntentHandler = {
   },
   handle(handlerInput) {
     console.log("<=== FALLBACKINTENT HANDLER ===>");
-    const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-    sessionAttributes.previousAction = "AMAZON.FallbackIntent";
+    var sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    sessionAttributes.previousIntent = sessionAttributes.currentIntent;
+    sessionAttributes.currentIntent = "AMAZON.FallbackIntent";
     const speakOutput = "Fallback Intent";
 
     return handlerInput.responseBuilder
@@ -1107,41 +1237,17 @@ const FallbackIntentHandler = {
       .getResponse();
   }
 };
-const DialogManagementStateInterceptor = {
-  process(handlerInput) {
 
-    const currentIntent = handlerInput.requestEnvelope.request.intent;
-
-    if (handlerInput.requestEnvelope.request.type === "IntentRequest" &&
-      handlerInput.requestEnvelope.request.dialogState !== "COMPLETED") {
-
-      const attributesManager = handlerInput.attributesManager;
-      const sessionAttributes = attributesManager.getSessionAttributes();
-
-      if (sessionAttributes[currentIntent.name]) {
-        let savedSlots = sessionAttributes[currentIntent.name].slots;
-
-        for (let key in savedSlots) {
-
-          if (!currentIntent.slots[key].value && savedSlots[key].value) {
-            currentIntent.slots[key] = savedSlots[key];
-          }
-        }
-      }
-      sessionAttributes[currentIntent.name] = currentIntent;
-      attributesManager.setSessionAttributes(sessionAttributes);
-    }
-  }
-};
 
 exports.handler = Alexa.SkillBuilders.custom()
   .addRequestHandlers(
     LaunchRequestHandler,
     NameIntentHandler,
+    PracticeRoundIntentHandler,
     CharactersSelectionScreenHandler,
     CharactersSelectionScreenTwoHandler,
     CharacterSelectedHandler,
-    EnemyRandomSelectedHandler,
+    RandomSelectedHandler,
     FightStartHandler,
     PlayerFightHandler,
     FightEndHandler,
@@ -1165,7 +1271,6 @@ exports.handler = Alexa.SkillBuilders.custom()
   .addErrorHandlers(ErrorHandler)
   .withPersistenceAdapter(dynamoDbPersistenceAdapter)
   .withApiClient(new Alexa.DefaultApiClient())
-  .addRequestInterceptors(DialogManagementStateInterceptor)
   .lambda();
 
 
@@ -1213,7 +1318,7 @@ characterSelector = async (handlerInput, characters, character) => {
     if (!sessionAttributes.hasOwnProperty('player')) {
       sessionAttributes.player = {};
     }
-    character = characterFilter(character);
+    character = await characterFilter(character);
     character = helpers.capitalize_Words(character);
     if (!attributes.hasOwnProperty("characters")) {
       attributes.characters = {};
@@ -1230,7 +1335,7 @@ characterSelector = async (handlerInput, characters, character) => {
     } else if (attributes.characters[character].score <= 100) {
       attributes.characters[character].score = 100;
     }
-    sessionAttributes.player = findCharacterInData(characters, character);
+    sessionAttributes.player = await findCharacterInData(characters, character);
     sessionAttributes.playerPower = character;
     sessionAttributes.playersHealth = 200;
     if (!attributes.characters[character].hasOwnProperty("charURL")) {
@@ -1243,7 +1348,7 @@ characterSelector = async (handlerInput, characters, character) => {
     if (!sessionAttributes.hasOwnProperty('computer')) {
       sessionAttributes.computer = {};
     }
-    character = characterFilter(character);
+    character = await characterFilter(character);
     character = helpers.capitalize_Words(character);
 
     if (!attributes.hasOwnProperty("compCharacters")) {
@@ -1260,12 +1365,12 @@ characterSelector = async (handlerInput, characters, character) => {
       attributes.compCharacters[character].score = 100;
     }
     await saveAttributes(handlerInput, attributes);
-    sessionAttributes.computer = findCharacterInData(characters, character);
+    sessionAttributes.computer = await findCharacterInData(characters, character);
     sessionAttributes.computersHealth = 200;
     sessionAttributes.enemyPower = character;
   }
 };
-characterFilter = (character) => {
+characterFilter = async (character) => {
   if (character === "mean" || character === "electric") {
     character = "Electric Mean";
   } else if (character === "lars" || character === "thundersquat" || character === "thunder" || character === "Lars") {
@@ -1277,7 +1382,7 @@ characterFilter = (character) => {
   }
   return character;
 };
-findCharacterInData = (characters, character) => {
+findCharacterInData = async (characters, character) => {
   for (var i = 0; i < characters.length;) {
     if (characters[i].fields.Name === character) {
       return characters[i].fields;
@@ -1285,9 +1390,9 @@ findCharacterInData = (characters, character) => {
     i++;
   }
 };
-findMoveInData = (player, move) => {
+findMoveInData = async (player, move) => {
   var moveStats;
-  if (player.ATK_LT_COMBO === move) {
+  if (player.ATK_LT_COMBO === move ||player.ATK_LT_NAME === move) {
     moveStats = {
       Name: player.ATK_LT_NAME,
       Damage: player.ATK_LT_DMG,
@@ -1295,28 +1400,28 @@ findMoveInData = (player, move) => {
     };
 
     return moveStats;
-  } else if (player.ATK_LT_COMBO2 === move) {
+  } else if (player.ATK_LT_COMBO2 === move||player.ATK_LT_NAME2 === move) {
     moveStats = {
       Name: player.ATK_LT_NAME2,
       Damage: player.ATK_LT_DMG2,
       DodgeRating: player.ATK_LT_DBRATING2
     };
     return moveStats;
-  } else if (player.ATK_HV_COMBO === move) {
+  } else if (player.ATK_HV_COMBO === move||player.ATK_HV_NAME === move) {
     moveStats = {
       Name: player.ATK_HV_NAME,
       Damage: player.ATK_HV_DMG,
       DodgeRating: player.ATK_HV_DBRATING
     };
     return moveStats;
-  } else if (player.ATK_HV_COMBO2 === move) {
+  } else if (player.ATK_HV_COMBO2 === move||player.ATK_HV_NAME2 === move) {
     moveStats = {
       Name: player.ATK_HV_NAME2,
       Damage: player.ATK_HV_DMG2,
       DodgeRating: player.ATK_HV_DBRATING2
     };
     return moveStats;
-  } else if (player.ATK_BLK_COMBO === move) {
+  } else if (player.ATK_BLK_COMBO === move||player.ATK_BLK_NAME === move) {
     moveStats = {
       Name: player.ATK_BLK_NAME,
       Damage: player.ATK_BLK_DMG,
@@ -1332,54 +1437,51 @@ fightingPlayer = async(handlerInput, move) => {
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   if (move === "use power move" || move === "power move") return;
   var player = sessionAttributes.player;
-  var moveData = findMoveInData(player, move);
-  console.log("MOVE DATA BEFORE---->>>>>" + JSON.stringify(moveData));
+  var moveData = await findMoveInData(player, move);
   var attributes = await getAttributes(handlerInput);
   if (attributes.characters[sessionAttributes.playerPower].hasOwnProperty("attackDamageIncrease")) {
   var updateDamage = moveData.Damage  * attributes.characters[sessionAttributes.playerPower].attackDamageIncrease;
   moveData.Damage = updateDamage.toFixed();
-  console.log("MOVE DATA AFTER---->>>>>" + JSON.stringify(moveData));
   sessionAttributes.playerMoveData = moveData;
   }else{
     sessionAttributes.playerMoveData = moveData;
   }
-  var didTheyDodge = dodgeRating(moveData);
+  var didTheyDodge = await dodgeRating(moveData);
   if (didTheyDodge) {
     sessionAttributes.didCompDodge = didTheyDodge;
   } else {
     sessionAttributes.didCompDodge = false;
-    health(handlerInput, "player", moveData);
+    await health(handlerInput, "player", moveData);
   }
   
-  powersAttackMove(handlerInput, "player");
+  await powersAttackMove(handlerInput, "player");
 };
 
 fightingComputer = async (handlerInput) => {
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   if (sessionAttributes.compPowerAttackAvail === true) return;
   var computer = sessionAttributes.computer;
-  var compMove = randomizeComputerAttack(computer);
-  var moveData = findMoveInData(computer, compMove);
-  var didTheyDodge = dodgeCompRating(moveData);
+  var compMove = await randomizeComputerAttack(computer);
+  var moveData = await findMoveInData(computer, compMove);
+  var didTheyDodge = await dodgeCompRating(moveData);
   if (didTheyDodge) {
     sessionAttributes.didPlayerDodge = didTheyDodge;
   } else {
     sessionAttributes.didPlayerDodge = false;
-    health(handlerInput, "computer", moveData);
+    await health(handlerInput, "computer", moveData);
   }
-  console.log("THE MOVE DATA FROM COMPUTER --->>>" +JSON.stringify(moveData));
   sessionAttributes.computerMoveData = moveData;
-  powersAttackMove(handlerInput, "computer");
+  await powersAttackMove(handlerInput, "computer");
 };
 
-playerBlocked = (handlerInput, move) => {
+playerBlocked = async (handlerInput, move) => {
   if (move === "blocked" || move === "dodge" || move === "duck" || move === "dip" || move === "dive") {
     move = "block";
   }
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-  var compMove = randomizeComputerAttack(sessionAttributes.computer);
-  var moveCompData = findMoveInData(sessionAttributes.computer, compMove);
-  var moveData = findMoveInData(sessionAttributes.player, move);
+  var compMove = await randomizeComputerAttack(sessionAttributes.computer);
+  var moveCompData = await findMoveInData(sessionAttributes.computer, compMove);
+  var moveData = await findMoveInData(sessionAttributes.player, move);
   let theDodgeRating = moveData.DodgeRating;
   let randomNumberTen = Math.floor(Math.random() * (5 * 100 - 1 * 100) + 1 * 100) / (1 * 100);
   var blockDamage = moveData.Damage;
@@ -1390,7 +1492,7 @@ playerBlocked = (handlerInput, move) => {
     return "You activated, " + moveData.Name + " since you blocked their attack you did " + blockDamage + " points of damage, but you still took " + damageTook.toFixed() + " points of damage. Keep Fighting!";
   }
 };
-health = (handlerInput, whosTurn, moveData) => {
+health = async (handlerInput, whosTurn, moveData) => {
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   if (whosTurn === "player") {
       sessionAttributes.computersHealth = (parseInt(sessionAttributes.computersHealth) - parseInt(moveData.Damage));
@@ -1400,33 +1502,31 @@ health = (handlerInput, whosTurn, moveData) => {
 
 };
 
-dodgeRating = (moveData) => {
+dodgeRating = async (moveData) => {
   let theDodgeRating = moveData.DodgeRating;
   let randomNumberTen = Math.floor(Math.random() * (5 * 100 - 1 * 100) + 1 * 100) / (1 * 100);
-  console.log("THE DODGE RATING IS>>> " + theDodgeRating + " THE RANDOM NUMBER IS >>> " + randomNumberTen);
   if (theDodgeRating >= randomNumberTen) {
     return true;
   } else return false;
 };
-dodgeCompRating = (moveData) => {
+dodgeCompRating = async (moveData) => {
   let theDodgeRating = moveData.DodgeRating;
   let randomNumberTen = Math.floor(Math.random() * (5 * 100 - 1 * 100) + 1 * 100) / (1 * 100);
-  console.log("THE DODGE RATING IS>>> " + theDodgeRating + " THE RANDOM NUMBER IS >>> " + randomNumberTen);
   if (theDodgeRating >= randomNumberTen) {
     return true;
   } else return false;
 };
 
-randomizeComputerAttack = (computer) => {
+randomizeComputerAttack = async (computer) => {
   let combos = ["ATK_LT_COMBO", "ATK_LT_COMBO2", "ATK_HV_COMBO", "ATK_HV_COMBO2"];
-  var theCombo = helpers.randomNoRepeats(combos);
+  var theCombo = await helpers.randomNoRepeats(combos);
+  console.log(theCombo);
   if (computer.hasOwnProperty(theCombo)) {
     var theAttack = computer[theCombo];
     return theAttack;
   }
 };
-
-powersAttackMove = (handlerInput, whosTurn) => {
+powersAttackMove = async (handlerInput, whosTurn) => {
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   var counter;
   if(!sessionAttributes.hasOwnProperty("turnCounter")){
@@ -1452,11 +1552,10 @@ powersAttackMove = (handlerInput, whosTurn) => {
     }
   }
 };
-usePowerAttack = (handlerInput, player, whosTurn) => {
+usePowerAttack = async (handlerInput, player, whosTurn) => {
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   var damage = player.POWER_DMG;
   
-  console.log("USEPOWERATTACK -------->>>>>" + damage);
   if (whosTurn === "player") {
     if (player.Name === "Charity") {
       sessionAttributes.playersHealth = (parseInt(sessionAttributes.playersHealth) + parseInt(damage));
@@ -1474,7 +1573,7 @@ usePowerAttack = (handlerInput, player, whosTurn) => {
 
 };
 
-healthBar = (handlerInput) => {
+healthBar = async (handlerInput) => {
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   if (sessionAttributes.playersHealth > 100) {
     var barOne;
@@ -1538,9 +1637,21 @@ theEnd = async (handlerInput) => {
 
 };
 
-moveList = (handlerInput) => {
+moveList = async (handlerInput) => {
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-  let ltName = sessionAttributes.player.ATK_LT_NAME;
+  if(sessionAttributes.previousIntent === "practiceRoundIntent"){
+    let ltName = sessionAttributes.practicePlayer.ATK_LT_NAME;
+  let ltCombo = sessionAttributes.practicePlayer.ATK_LT_COMBO;
+  let ltName2 = sessionAttributes.practicePlayer.ATK_LT_NAME2;
+  let ltCombo2 = sessionAttributes.practicePlayer.ATK_LT_COMBO2;
+  let hvName = sessionAttributes.practicePlayer.ATK_HV_NAME;
+  let hvCombo = sessionAttributes.practicePlayer.ATK_HV_COMBO;
+  let hvName2 = sessionAttributes.practicePlayer.ATK_HV_NAME2;
+  let hvCombo2 = sessionAttributes.practicePlayer.ATK_HV_COMBO2;
+  let theList = `<b>${ltName}</b>: ${ltCombo} <br><b>${ltName2}</b>: ${ltCombo2} <br><b>${hvName}</b>: ${hvCombo} <br><b>${hvName2}</b>: ${hvCombo2}<br><b>Dodge:</b> dodge`;
+  return theList;
+  }else{
+    let ltName = sessionAttributes.player.ATK_LT_NAME;
   let ltCombo = sessionAttributes.player.ATK_LT_COMBO;
   let ltName2 = sessionAttributes.player.ATK_LT_NAME2;
   let ltCombo2 = sessionAttributes.player.ATK_LT_COMBO2;
@@ -1548,12 +1659,25 @@ moveList = (handlerInput) => {
   let hvCombo = sessionAttributes.player.ATK_HV_COMBO;
   let hvName2 = sessionAttributes.player.ATK_HV_NAME2;
   let hvCombo2 = sessionAttributes.player.ATK_HV_COMBO2;
-  var theList = `<b>${ltName}</b>: ${ltCombo} <br><b>${ltName2}</b>: ${ltCombo2} <br><b>${hvName}</b>: ${hvCombo} <br><b>${hvName2}</b>: ${hvCombo2}<br>Dodge: dodge`;
+  let theList = `<b>${ltName}</b>: ${ltCombo} <br><b>${ltName2}</b>: ${ltCombo2} <br><b>${hvName}</b>: ${hvCombo} <br><b>${hvName2}</b>: ${hvCombo2}<br><b>Dodge:</b> dodge`;
   return theList;
+  }
 };
-moveListSpeak = (handlerInput) => {
+moveListSpeak = async (handlerInput) => {
   let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-  let ltName = sessionAttributes.player.ATK_LT_NAME;
+  if(sessionAttributes.previousIntent === "practiceRoundIntent"){
+    let ltName = sessionAttributes.practicePlayer.ATK_LT_NAME;
+  let ltCombo = sessionAttributes.practicePlayer.ATK_LT_COMBO;
+  let ltName2 = sessionAttributes.practicePlayer.ATK_LT_NAME2;
+  let ltCombo2 = sessionAttributes.practicePlayer.ATK_LT_COMBO2;
+  let hvName = sessionAttributes.practicePlayer.ATK_HV_NAME;
+  let hvCombo = sessionAttributes.practicePlayer.ATK_HV_COMBO;
+  let hvName2 = sessionAttributes.practicePlayer.ATK_HV_NAME2;
+  let hvCombo2 = sessionAttributes.practicePlayer.ATK_HV_COMBO2;
+  let theList = `The move list for ${sessionAttributes.practicePlayer.Name} is the following: ${ltName}:<break strength="strong"/> ${ltCombo}; ${ltName2}:<break strength="strong"/> ${ltCombo2}; ${hvName}:<break strength="strong"/> ${hvCombo}; ${hvName2}:<break strength="strong"/> ${hvCombo2}. Lastly, you can also<break strength="strong"/> dodge.`;
+  return theList;
+  }else{
+    let ltName = sessionAttributes.player.ATK_LT_NAME;
   let ltCombo = sessionAttributes.player.ATK_LT_COMBO;
   let ltName2 = sessionAttributes.player.ATK_LT_NAME2;
   let ltCombo2 = sessionAttributes.player.ATK_LT_COMBO2;
@@ -1561,12 +1685,14 @@ moveListSpeak = (handlerInput) => {
   let hvCombo = sessionAttributes.player.ATK_HV_COMBO;
   let hvName2 = sessionAttributes.player.ATK_HV_NAME2;
   let hvCombo2 = sessionAttributes.player.ATK_HV_COMBO2;
-  var theList = `The move list for ${sessionAttributes.player.Name} is the following: ${ltName}:<break strength="strong"/> ${ltCombo}; ${ltName2}:<break strength="strong"/> ${ltCombo2}; ${hvName}:<break strength="strong"/> ${hvCombo}; ${hvName2}:<break strength="strong"/> ${hvCombo2}. Lastly, you can also dodge.`;
+  let theList = `The move list for ${sessionAttributes.player.Name} is the following: ${ltName}:<break strength="strong"/> ${ltCombo}; ${ltName2}:<break strength="strong"/> ${ltCombo2}; ${hvName}:<break strength="strong"/> ${hvCombo}; ${hvName2}:<break strength="strong"/> ${hvCombo2}. Lastly, you can also<break strength="strong"/> dodge.`;
   return theList;
+  }
+  
 };
 
 calculateStats = async (handlerInput) => {
-  const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+  var sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   var attributes = await getAttributes(handlerInput);
   let playerCharacter = sessionAttributes.player.Name;
   let compCharacter = sessionAttributes.computer.Name;
@@ -1617,7 +1743,7 @@ getStandings = async (handlerInput) => {
 };
 
 levelingCharacter = async (handlerInput,playerCharacter) => {
-  const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+  var sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   var attributes = await getAttributes(handlerInput);
   var charLevel = attributes.characters[playerCharacter].charLevel;
   var charExp = attributes.characters[playerCharacter].charExp;
@@ -1747,7 +1873,11 @@ var backgroundImage = ["https://powers.s3.amazonaws.com/maarten-van-den-heuvel-S
 ];
 
 statsData = async (handlerInput) => {
-  const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+  var base = new Airtable({
+    apiKey: variables.ApiAirtable
+  }).base('appoBlEf8I1VQdU3r');
+
+  var sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   var attributes = await getAttributes(handlerInput);
   var scoreObj = {};
   var countObj = {};
@@ -1763,19 +1893,13 @@ statsData = async (handlerInput) => {
       scoreObj[i] = attributes.characters[i].score;
     }
   }
-
   let countArr = Object.values(countObj);
   let maxCount = Math.max(...countArr);
   let scoreArr = Object.values(scoreObj);
   let maxScore = Math.max(...scoreArr);
 var highestScoreName;
-var highestScoreNames = Object.keys(scoreObj);
-console.log("IN SCOREOBJ----->>>>" +JSON.stringify(Object.keys(scoreObj)));
-
 var highestCountName;
-var highestCountNames = Object.keys(countObj);
 for(i in scoreObj){
-console.log("IN SCOREOBJ----->>>>" +JSON.stringify(scoreObj[i]));
   if(scoreObj[i]===maxScore){
     highestScoreName = i;
   }
@@ -1811,10 +1935,9 @@ for(i in countObj){
           "fields": fields
       }], function(err, records) {
               if (err) {console.error(err);return;}
-              console.log("UPDATED RECORD IN PROMISE = " + JSON.stringify(records[0]));
               resolve(records[0]);
           });
   });
-  console.log("UPDATED RECORD = " + JSON.stringify(record));
+
   return stats;
 };

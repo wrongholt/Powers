@@ -54,8 +54,8 @@
         }
       },
       "isAvailableWorldwide": true,
-      "testingInstructions": "Sample Testing Instructions.",
-      "category": "KNOWLEDGE_AND_TRIVIA",
+      "testingInstructions": "Open powers, to open the game. Pick character to start fighting, say the name or select of character that you wish to play and select your opponent. Say a move like light attack or heavy attack, you may also say move list to access it. There are also stats and leaderboards after you fight once. Just say stats or leaderboard.",
+      "category": "Games & Trivia - Games - Strategy Games",
       "distributionCountries": []
     },
     "apis": {

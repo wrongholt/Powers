@@ -46,19 +46,15 @@
                     "samples": [
                         "I am {CustomName}",
                         "My name is {CustomName}",
-                        "My name's {CustomName}",
                         "Hi my name is {CustomName}",
                         "I am {Name}",
                         "My name is {Name}",
-                        "My name's {Name}",
                         "Hi my name is {Name}",
                         "I am {DEName}",
                         "My name is {DEName}",
-                        "My name's {DEName}",
                         "Hi my name is {DEName}",
                         "I am {GBName}",
                         "My name is {GBName}",
-                        "My name's {GBName}",
                         "Hi my name is {GBName}"
                     ]
                 },
@@ -87,9 +83,19 @@
                     "name": "CharacterSelectionScreenIntent",
                     "slots": [],
                     "samples": [
-                        "Lets Fight",
-                        "I want to fight",
-                        "pick character"
+                        "lets fight",
+                        "lets fight again",
+                        "i want to fight",
+                        "fight",
+                        "fight again",
+                        "pick character",
+                        "pick your character",
+                        "pick a character",
+                        "choose character",
+                        "choose a character",
+                        "select character",
+                        "select a character",
+                        "pick a character to fight"
                     ]
                 },
                 {
@@ -97,8 +103,21 @@
                     "slots": [],
                     "samples": [
                         "Open move list",
+                        "Open the move list",
                         "move list",
-                        "bot help"
+                        "the move list",
+                        "view the move list",
+                        "view move list",
+                        "view my move list",
+                        "show my move list",
+                        "show move list",
+                        "show the move list",
+                        "bot help",
+                        "attack list",
+                        "show attack list",
+                        "show attacks",
+                        "view attacks",
+                        "view attack list"
                     ]
                 },
                 {
@@ -118,7 +137,10 @@
                         "stats",
                         "my stats",
                         "my statistics",
+                        "view my statistics",
                         "see my stats",
+                        "see the stats",
+                        "view the stats",
                         "view my stats"
                     ]
                 },
@@ -128,9 +150,19 @@
                     "samples": [
                         "standings",
                         "leaderboard",
+                        "leaderboards",
                         "my standings",
+                        "view my standings",
                         "the leaderboard",
-                        "view leaderboard"
+                        "view leaderboard",
+                        "view leaderboards",
+                        "view the leaderboards",
+                        "view the leaderboard",
+                        "view my rankings",
+                        "view your rankings",
+                        "view the rankings",
+                        "rankings",
+                        "my rankings"
                     ]
                 },
                 {
@@ -140,6 +172,7 @@
                         "what can I buy",
                         "what can I shop for",
                         "tell me what I can buy",
+                        "store",
                         "buy",
                         "shop",
                         "purchase"
@@ -164,9 +197,18 @@
                     "name": "RandomCharacterSelectedIntent",
                     "slots": [],
                     "samples": [
-                        "Random Character",
-                        "Random Player",
-                        "Random Power"
+                        "random character",
+                        "choose random character",
+                        "choose a random character",
+                        "choose for me",
+                        "choose for you",
+                        "random player",
+                        "random fighter",
+                        "choose random fighter",
+                        "choose a random fighter",
+                        "random power",
+                        "choose random power",
+                        "choose a random power"
                     ]
                 },
                 {
@@ -493,6 +535,126 @@
                                     "back forward light attack"
                                 ]
                             }
+                        },{
+                            "name": {
+                                "value": "Shin Gouge"
+                            }
+                        },{
+                            "name": {
+                                "value": "One Inch Punch"
+                            }
+                        },{
+                            "name": {
+                                "value": "Claw Face"
+                            }
+                        },{
+                            "name": {
+                                "value": "Claw Attack"
+                            }
+                        },{
+                            "name": {
+                                "value": "Straight Punch"
+                            }
+                        },{
+                            "name": {
+                                "value": "Quick Punch"
+                            }
+                        },{
+                            "name": {
+                                "value": "Glowing Punch"
+                            }
+                        },{
+                            "name": {
+                                "value": "Slam"
+                            }
+                        },{
+                            "name": {
+                                "value": "Shock"
+                            }
+                        },{
+                            "name": {
+                                "value": "Blow Acid Kiss"
+                            }
+                        },{
+                            "name": {
+                                "value": "Side Kick"
+                            }
+                        },{
+                            "name": {
+                                "value": "Head Butt"
+                            }
+                        },{
+                            "name": {
+                                "value": "Tail Whip"
+                            }
+                        },{
+                            "name": {
+                                "value": "Knee Strike"
+                            }
+                        },{
+                            "name": {
+                                "value": "Triple Punch"
+                            }
+                        },{
+                            "name": {
+                                "value": "Leaping Punch"
+                            }
+                        },{
+                            "name": {
+                                "value": "Head Lock Slam"
+                            }
+                        },{
+                            "name": {
+                                "value": "Inner Leg Kick"
+                            }
+                        },{
+                            "name": {
+                                "value": "Neck Bite"
+                            }
+                        },{
+                            "name": {
+                                "value": "Round House Kick"
+                            }
+                        },{
+                            "name": {
+                                "value": "Groin Buster"
+                            }
+                        },{
+                            "name": {
+                                "value": "Flesh Gouge"
+                            }
+                        },{
+                            "name": {
+                                "value": "Ear Slap"
+                            }
+                        },{
+                            "name": {
+                                "value": "Head Butt"
+                            }
+                        },{
+                            "name": {
+                                "value": "Whirlwind"
+                            }
+                        },{
+                            "name": {
+                                "value": "Uppercut"
+                            }
+                        },{
+                            "name": {
+                                "value": "Close Line"
+                            }
+                        },{
+                            "name": {
+                                "value": "Electric Grasp"
+                            }
+                        },{
+                            "name": {
+                                "value": "Thigh Sleeper Hold"
+                            }
+                        },{
+                            "name": {
+                                "value": "Flying Leap Kick"
+                            }
                         },
                         {
                             "name": {
@@ -502,6 +664,34 @@
                         {
                             "name": {
                                 "value": "heavy attack"
+                            }
+                        },{
+                            "name": {
+                                "value": "Heel Stomp"
+                            }
+                        },{
+                            "name": {
+                                "value": "Flying Slash"
+                            }
+                        },{
+                            "name": {
+                                "value": "Dropkick"
+                            }
+                        },{
+                            "name": {
+                                "value": "Multi Kick Attack"
+                            }
+                        },{
+                            "name": {
+                                "value": "One Handed Beam"
+                            }
+                        },{
+                            "name": {
+                                "value": "Suplex"
+                            }
+                        },{
+                            "name": {
+                                "value": "Lightning Whip"
                             }
                         },
                         {
