@@ -10,6 +10,8 @@
             "ask powers to view my stats"
           ],
           "name": "Powers",
+          "smallIconUri": "https://powers.s3.amazonaws.com/icon_108_A2Z.png",
+          "largeIconUri": "https://powers.s3.amazonaws.com/icon_512_A2Z.png",
           "description": "Powers is a turn based fighting game that has some great user interface and fun voice that sounds like a robot, that is your fighter helper companion."
         },
         "en-CA": {
@@ -19,6 +21,8 @@
             "ask powers to pick a character",
             "ask powers to view my stats"
           ],
+          "smallIconUri": "https://powers.s3.amazonaws.com/icon_108_A2Z.png",
+          "largeIconUri": "https://powers.s3.amazonaws.com/icon_512_A2Z.png",
           "name": "Powers",
           "description": "Powers is a turn based fighting game that has some great user interface and fun voice that sounds like a robot, that is your fighter helper companion."
         },
@@ -29,6 +33,8 @@
             "ask powers to pick a character",
             "ask powers to view my stats"
           ],
+          "smallIconUri": "https://powers.s3.amazonaws.com/icon_108_A2Z.png",
+          "largeIconUri": "https://powers.s3.amazonaws.com/icon_512_A2Z.png",
           "name": "Powers",
           "description": "Powers is a turn based fighting game that has some great user interface and fun voice that sounds like a robot, that is your fighter helper companion."
         },
@@ -39,6 +45,8 @@
             "ask powers to pick a character",
             "ask powers to view my stats"
           ],
+          "smallIconUri": "https://powers.s3.amazonaws.com/icon_108_A2Z.png",
+          "largeIconUri": "https://powers.s3.amazonaws.com/icon_512_A2Z.png",
           "name": "Powers",
           "description": "Powers is a turn based fighting game that has some great user interface and fun voice that sounds like a robot, that is your fighter helper companion."
         },
@@ -49,13 +57,15 @@
             "ask powers to pick a character",
             "ask powers to view my stats"
           ],
+          "smallIconUri": "https://powers.s3.amazonaws.com/icon_108_A2Z.png",
+          "largeIconUri": "https://powers.s3.amazonaws.com/icon_512_A2Z.png",
           "name": "Powers",
           "description": "Powers is a turn based fighting game that has some great user interface and fun voice that sounds like a robot, that is your fighter helper companion."
         }
       },
       "isAvailableWorldwide": true,
       "testingInstructions": "Open powers, to open the game. Pick character to start fighting, say the name or select of character that you wish to play and select your opponent. Say a move like light attack or heavy attack, you may also say move list to access it. There are also stats and leaderboards after you fight once. Just say stats or leaderboard.",
-      "category": "Games & Trivia - Games - Strategy Games",
+      "category": "GAMES",
       "distributionCountries": []
     },
     "apis": {
@@ -70,6 +80,35 @@
         ]
       }
     },
-    "manifestVersion": "1.0"
+    "manifestVersion": "1.0",
+    "privacyAndCompliance": {
+      "allowsPurchases": true,
+      "usesPersonalInfo": true,
+      "isChildDirected": false,
+      "isExportCompliant": true,
+      "containsAds": false,
+      "locales": {
+        "en-US": {
+          "privacyPolicyUrl": "http://www.wrongholt.com/privacypolicy.html",
+          "termsOfUseUrl": "http://www.wrongholt.com/privacypolicy.html"
+        },
+        "en-CA": {
+          "privacyPolicyUrl": "http://www.wrongholt.com/privacypolicy.html",
+          "termsOfUseUrl": "http://www.wrongholt.com/privacypolicy.html"
+        },
+        "en-AU": {
+          "privacyPolicyUrl": "http://www.wrongholt.com/privacypolicy.html",
+          "termsOfUseUrl": "http://www.wrongholt.com/privacypolicy.html"
+        },
+        "en-GB": {
+          "privacyPolicyUrl": "http://www.wrongholt.com/privacypolicy.html",
+          "termsOfUseUrl": "http://www.wrongholt.com/privacypolicy.html"
+        },
+        "en-IN": {
+          "privacyPolicyUrl": "http://www.wrongholt.com/privacypolicy.html",
+          "termsOfUseUrl": "http://www.wrongholt.com/privacypolicy.html"
+        }
+      }
+    }
   }
 }

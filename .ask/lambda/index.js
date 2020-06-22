@@ -23,11 +23,8 @@ const dynamoDbPersistenceAdapter = new DynamoDbPersistenceAdapter({
 });
 const variables = require('./variables');
 
+//TODO Fix the healthbars 
 
-var helpHints = ["If you wish to look at your stats just say my stats or statistics.","Have you play for a bit if so check out the leaderboards by saying rankings or leaderboards.",
-"Did you know there is a move list just ask for it, after you picked your character.", "Are you ready to rumble, if so say lets fight or pick character." ];
-var goodbyes = ["Don't ever tell anyone anything. If you do, you start missing everybody.","Bye Felicia!","It is so hard to leave—until you leave. And then it is the easiest thing in the world","Later Gator, after awhile crocodile",
-"Adios amigos!","Thanks for coming, come back soon!","I'll see you in another life. When we are both cats.","You've changed me forever. And I'll never forget you.","This is not a goodbye, this is a thank you."];
 
 const LaunchRequestHandler = {
   canHandle(handlerInput) {
@@ -42,16 +39,15 @@ const LaunchRequestHandler = {
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "launch";
     var attributes = await getAttributes(handlerInput);
-
     var name;
-    var power1 = await getRandomPowerImage();
-    var power2 = await getRandomPowerImage();
-    var bgImage = await getRandomMainBGImage();
+    console.log("IN LAUNCH WHERE COMING FROM---->>>>" + sessionAttributes.previousIntent);
 
     if (Object.keys(attributes).length === 0) {
       speakOutput = '<break strength="strong"/><p>Welcome, to <phoneme alphabet="ipa" ph="pɑwɚrs">Powers</phoneme>. I am  <say-as interpret-as="spell-out">G34XY</say-as>, a <phoneme alphabet="ipa" ph="pɑwɚrs">Powers</phoneme> fighter helper. </p><p>I am here to help you in any way possible through out any fight you may ask for my help by saying <break strength="strong"/> move list <break strength="strong"/>or bot help, with this I can show you the possible moves you can than say in the fight.</p> I will try to help in any way possible.<break strength="strong"/><amazon:emotion name="excited" intensity="high"> Except, I cannot fight for you!!</amazon:emotion> That is not in my contract you hear me <break strength="strong"/><emphasis level="strong">I do not fight!</emphasis>  Let\'s start by getting your name, we use this to keep track of your stats and how you are doing on the leaderboard. Just say, my name is.';
     } else {
       name = attributes.name;
+    console.log("IN LAUNCH---->>>>" + name);
+
       var launch2 = ['<p>Welcome back to Powers, ' + helpers.capitalize_Words(name) + '. </p> <p>Would you like to view your rankings or pick your character to fight?</p>',
         '<p>Hey you came back!</p> <p>This is great news.</p> <p>What would you like to do fight or look at your rankings?</p>',
         '<p>Hello again, can\'t keep away can you, I was told it was addicting. You can start by saying pick character or view my rankings or statistics.</p>',
@@ -68,7 +64,7 @@ const LaunchRequestHandler = {
     }
     sessionAttributes.characterRecords = characterRecords;
     var charactersArray = [];
-    for (var i = 0; i < characterRecords.length;) {
+   for (var i = 0; i < characterRecords.length;) {
       charactersArray.push(characterRecords[i].fields.Name);
 
       if (!attributes.characters.hasOwnProperty(characterRecords[i].fields.Name)) {
@@ -78,7 +74,11 @@ const LaunchRequestHandler = {
       }
       i++;
     }
+    sessionAttributes.charactersArray = charactersArray;
     if(sessionAttributes.previousIntent ==="practiceRoundIntent"){
+      var record = await helpers.httpGet(theBase, "&filterByFormula=%7BuserID%7D%3D%22" + attributes.nameid + "%22", 'PlayerCharts');
+      var userRecord = record.records;
+      attributes.usersID = userRecord[0].fields.RecordId;
       speakOutput = 'You have now recieved your certification of practice mode, to get into a real game we start by selecting your character. To do that say, select character.';
     }else if (sessionAttributes.previousIntent === "stats" || sessionAttributes.previousIntent === "standings") {
       speakOutput = "I am sorry you need to play more to get your statistics.";
@@ -89,9 +89,12 @@ const LaunchRequestHandler = {
     } else if (sessionAttributes.previousIntent === "GoldXP") {
       speakOutput = "Outstanding you just bought the Gold Experience Pack. If you wish to use them just say, Use Gold Pack.";
     }
-    sessionAttributes.charactersArray = charactersArray;
+    
     await saveAttributes(handlerInput, attributes);
     if (helpers.supportsAPL(handlerInput)) {
+      var power1 = await getRandomPowerImage(characterRecords);
+    var power2 = await getRandomPowerImage(characterRecords);
+    var bgImage = await getRandomMainBGImage();
       return handlerInput.responseBuilder
         .speak(helpers.speechPolly(speakOutput))
         .reprompt(helpers.speechPolly(speakOutput))
@@ -146,15 +149,23 @@ const NameIntentHandler = {
       var userName;
       if (usersName) {
         userName = usersName;
+    console.log("IN GET FIRST NAME---->>>>" + userName);
+
       } else if (usersGBName) {
         userName = usersGBName;
+    console.log("IN GET GB NAME---->>>>" + userName);
+
       } else if (usersDEName) {
         userName = usersDEName;
+    console.log("IN GET DE NAME---->>>>" + userName);
+
       } else if (usersCustName) {
         userName = usersCustName;
+    console.log("IN GET CUSTOM NAME---->>>>" + userName);
+
       }
       userName = helpers.capitalize_Words(userName);
-      
+
       await new Promise((resolve, reject) => {
         base('PlayerCharts').create([{
           "fields": {
@@ -171,11 +182,6 @@ const NameIntentHandler = {
       });
       attributes.name = userName;
       attributes.nameid = userName + usersID;
-      var theBase = "appoBlEf8I1VQdU3r";
-      var record = await helpers.httpGet(theBase, "&filterByFormula=%7BuserID%7D%3D%22" + attributes.nameid + "%22", 'PlayerCharts');
-      var userRecord = record.records;
-      attributes.usersID = userRecord[0].fields.RecordId;
-      
       await saveAttributes(handlerInput, attributes);
      return PracticeRoundIntentHandler.handle(handlerInput);
     }
@@ -193,6 +199,7 @@ const PracticeRoundIntentHandler = {
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "practiceRoundIntent";
     attributes.isPractice = true;
+
     var characters = sessionAttributes.characterRecords;
     if (!sessionAttributes.hasOwnProperty('practicePlayer')) {
       sessionAttributes.practicePlayer = {};
@@ -211,6 +218,8 @@ const PracticeRoundIntentHandler = {
     }else{
       practiceSteps = sessionAttributes.practiceSteps;
     }
+    console.log("IN PRACTICE---->>>>" + practiceSteps);
+
     var speakOutput;
     var practiceSpeak = ['Perfect, ' + helpers.capitalize_Words(userName) + ", I have randomly chosen your character and an opponent, lets start out by teaching you, the first move, which is, light attack. Try saying, light attack.",
         'Excellent!! The light attack move is the only move that you can use without your opponent possibly blocking you. So keep that in mind when you use other moves. Now for your next attack move. Try saying, heavy attack.',
@@ -269,51 +278,59 @@ const CharactersSelectionScreenHandler = {
         handlerInput.requestEnvelope.request.arguments[0] === 'ItemSelected'));
   },
   async handle(handlerInput) {
-    var theBase = "appoBlEf8I1VQdU3r";
-    var characterdata = await helpers.httpGet(theBase, '', 'Characters');
-    var characterRecords = characterdata.records;
     var attributes = await getAttributes(handlerInput);
-    
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    if (Object.keys(sessionAttributes).length === 0) {
+      return LaunchRequestHandler.handle(handlerInput);
+    }
+    var charactersArray;   
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "characterSelection";
     if (Object.keys(attributes).length === 0) {
       return LaunchRequestHandler.handle(handlerInput);
     }
-    attributes.isPractice = false;
-    await saveAttributes(handlerInput,attributes);
     if (!sessionAttributes.hasOwnProperty('characterRecords')) {
+      var theBase = "appoBlEf8I1VQdU3r";
+    var characterdata = await helpers.httpGet(theBase, '', 'Characters');
+    var characterRecords = characterdata.records;
       sessionAttributes.characterRecords = [];
+       charactersArray = [];
+    for (var i = 0; i < characterRecords.length;) {
+        charactersArray.push(characterRecords[i].fields.Name);
+        i++;
+      }
+      sessionAttributes.charactersArray = charactersArray;
+    }else{
+      charactersArray = sessionAttributes.charactersArray;
     }
     
-    sessionAttributes.characterRecords = characterRecords;
-    var charactersArray = [];
-    for (var i = 0; i < characterRecords.length;) {
-      charactersArray.push(characterRecords[i].fields.Name);
-      i++;
-    }
-    sessionAttributes.charactersArray2 = charactersArray;
+    console.log("CHARACTER SELECTION"+charactersArray);
+    attributes.isPractice = false;
+    await saveAttributes(handlerInput,attributes);
     if (charactersArray.length > 2) {
       charactersArray = charactersArray.slice(1).join(', <break time=".4s"/>').replace(/, ([^,]*)$/, '<break time=".4s"/> or<break time=".3s"/> $1');
     }
-    sessionAttributes.charactersArray = charactersArray;
-    var whoToFight = ["Alright, lets go " + sessionAttributes.playerPower + "! Now who do you want to fight, " + sessionAttributes.charactersArray + "? You may say, the characters name or random character.",
-      "Are you serious, " + sessionAttributes.playerPower + " is my favorite! Who would you like to fight, " + sessionAttributes.charactersArray + "? Don't forget that you can say the characters name or random character.",
-      "Everyone, we got " + sessionAttributes.playerPower + " in the house! Who are they going to fight against, " + sessionAttributes.charactersArray + "? Did I tell you, that you may say the characters name or random character.",
-    ];
-    var speakOutput = await helpers.randomNoRepeats(whoToFight);
+    sessionAttributes.timedCharacterArray = charactersArray;
+
+    var speakOutput;
     if (!sessionAttributes.playerPower) {
       var speakArray = ["You can pick from any of these characters, just say thier name or you can have me choose for you by saying choose for me: " + charactersArray + '!',
     "Are you ready? You can pick from these characters, just by saying their name or you could say choose for me and I will grab someone by random. The characters are: "+ charactersArray + '!',
   "Who's ready to rumble!? I am not, but I am not also a character you can choose, those are: " + charactersArray + ". You may also say, random character and I will go and select the best random character you could get!"];
       speakOutput = await helpers.randomNoRepeats(speakArray);
+    }else{
+      var whoToFight = ["Alright, lets go " + sessionAttributes.playerPower + "! Now who do you want to fight, " + charactersArray + "? You may say, the characters name or random character.",
+      "Are you serious, " + sessionAttributes.playerPower + " is my favorite! Who would you like to fight, " + charactersArray + "? Don't forget that you can say the characters name or random character.",
+      "Everyone, we got " + sessionAttributes.playerPower + " in the house! Who are they going to fight against, " + charactersArray + "? Did I tell you, that you may say the characters name or random character.",
+    ];
+     speakOutput = await helpers.randomNoRepeats(whoToFight);
     }
 
     if (helpers.supportsAPL(handlerInput)) {
       if (Alexa.getRequestType(handlerInput.requestEnvelope) === 'Alexa.Presentation.APL.UserEvent' && handlerInput.requestEnvelope.request.arguments[0] === 'ItemSelected') {
         var character = handlerInput.requestEnvelope.request.arguments[2];
-        console.log("THE CHARACTER SELECTION---->>>" + character);
-        await characterSelector(handlerInput, characterRecords, character);
+    console.log("IN CHARACTER SELECTION---->>>>" + character);
+        await characterSelector(handlerInput, sessionAttributes.characterRecords, character);
         return CharactersSelectionScreenTwoHandler.handle(handlerInput);
       }
       return handlerInput.responseBuilder
@@ -347,21 +364,19 @@ const CharactersSelectionScreenTwoHandler = {
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "characterSelectionTwo";
-    var whoToFight = ["Alright, lets go " + sessionAttributes.playerPower + "! Now who do you want to fight, " + sessionAttributes.charactersArray + "? You may say, the characters name, or random character.",
-      "Are you serious, " + sessionAttributes.playerPower + " is my favorite! Who would you like to fight, " + sessionAttributes.charactersArray + "? Don't forget, that you can say the characters name, or random character.",
-      "Everyone, we got " + sessionAttributes.playerPower + " in the house! Who are they going to fight against, " + sessionAttributes.charactersArray + "? Did I tell you, that you may say the characters name, or random character.",
+    if (!sessionAttributes.playerPower) {
+      return CharactersSelectionScreenHandler.handle(handlerInput);
+    }
+    var whoToFight = ["Alright, lets go " + sessionAttributes.playerPower + "! Now who do you want to fight, " + sessionAttributes.timedCharacterArray + "? You may say, the characters name, or random character.",
+      "Are you serious, " + sessionAttributes.playerPower + " is my favorite! Who would you like to fight, " + sessionAttributes.timedCharacterArray + "? Don't forget, that you can say the characters name, or random character.",
+      "Everyone, we got " + sessionAttributes.playerPower + " in the house! Who are they going to fight against, " + sessionAttributes.timedCharacterArray + "? Did I tell you, that you may say the characters name, or random character.",
     ];
     var speakOutput = await helpers.randomNoRepeats(whoToFight);
-    if (!sessionAttributes.playerPower) {
-      var speakArray = ["You can pick from any of these characters, just say thier name or you can have me choose for you by saying choose for me: " + charactersArray + '!',
-    "Are you ready? You can pick from these characters, just by saying their name or you could say choose for me and I will grab someone by random. The characters are: "+ charactersArray + '!',
-  "Who's ready to rumble!? I am not, but I am not also a character you can choose, those are: " + charactersArray + ". You may also say, random character and I will go and select the best random character you could get!"];
-      speakOutput = await helpers.randomNoRepeats(speakArray);
-    }
-
     if (helpers.supportsAPL(handlerInput)) {
       if (Alexa.getRequestType(handlerInput.requestEnvelope) === 'Alexa.Presentation.APL.UserEvent' && handlerInput.requestEnvelope.request.arguments[0] === 'SecondItemSelected') {
         var character = handlerInput.requestEnvelope.request.arguments[2];
+    console.log("IN CHARACTER SELECTION 2---->>>>" + character);
+
         var characters = sessionAttributes.characterRecords;
         await characterSelector(handlerInput, characters, character);
         return FightStartHandler.handle(handlerInput);
@@ -396,6 +411,8 @@ const CharacterSelectedHandler = {
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "characterSelected";
+    console.log("IN CHARACTER SELECTED---->>>>" + character);
+
     var characters = sessionAttributes.characterRecords;
     if (!sessionAttributes.playerPower) {
       await characterSelector(handlerInput, characters, character);
@@ -417,9 +434,12 @@ const RandomSelectedHandler = {
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "randomSelected";
+
     var characters = sessionAttributes.characterRecords;
-    var charactersArray = sessionAttributes.charactersArray2;
+    var charactersArray = sessionAttributes.charactersArray;
     var randomCharacter = await helpers.randomNoRepeats(charactersArray);
+    console.log("IN RANDOM SELECTED CHARACTER---->>>>" + randomCharacter);
+
     if (!sessionAttributes.playerPower) {
       await characterSelector(handlerInput, characters, randomCharacter);
       sessionAttributes.randomCharacter = randomCharacter;
@@ -440,6 +460,7 @@ const FightStartHandler = {
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "fightStart";
+    console.log("IN MOVE START---->>>>");
     var speakOutput;
     if (!sessionAttributes.hasOwnProperty("FightStart")) {
       speakOutput = "To start the fight, say either an attack move or move list to access it. " + sessionAttributes.playerPower + ' <sub alias="versus">VS</sub> ' + sessionAttributes.enemyPower + "! Ready Fight!!";
@@ -498,13 +519,15 @@ const PlayerFightHandler = {
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "fightHandler";
+    var move = handlerInput.requestEnvelope.request.intent.slots.Move.value;
+    console.log("IN MOVE---->>>>" + move);
     if (attributes.isPractice === true){
       return PracticeRoundIntentHandler.handle(handlerInput);
     }
     
     var speakOutput;
     var audio;
-    var move = handlerInput.requestEnvelope.request.intent.slots.Move.value;
+    
 
     if (move === "dodge" || move === "block" || move === "dip" || move === "duck" || move === "dive" || move === "blocked") {
       speakOutput = await playerBlocked(handlerInput, move);
@@ -615,6 +638,8 @@ const FightEndHandler = {
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "fightEnd";
+console.log("IN FIGHT END---->>>>");
+
     if (sessionAttributes.computerWin === false && sessionAttributes.playerWin === false) {
       speakOutput =  "You just used the " +sessionAttributes.playerMoveData.Name + " move and your opponent used "+ sessionAttributes.computerMoveData.Name + " and it ended in a tie, you will get them next time! Say, lets fight again or you can say, view my stats.";
       displayOutput = "Wow, it was a tie, you will get them next time!";
@@ -675,7 +700,7 @@ const MoveListHandler = {
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "moveList";
-
+console.log("IN MOVE LIST---->>>>");
     if(sessionAttributes.previousIntent === "practiceRoundIntent"){
       speakOutput = await moveListSpeak(handlerInput) + " Now try saying one of the attack moves you haven't done?";
       if (helpers.supportsAPL(handlerInput)) {
@@ -760,7 +785,9 @@ const YourStatsHandler = {
     var statsObject = await statsData(handlerInput);
     playerName = helpers.capitalize_Words(playerName);
     speakOutput = "The stats for " + playerName + " are the following: " + statsObject.speakOutput;
-
+    var helpHints = ["If you wish to look at your stats just say my stats or statistics.","Have you play for a bit if so check out the leaderboards by saying rankings or leaderboards.",
+    "Did you know there is a move list just ask for it, after you picked your character.", "Are you ready to rumble, if so say lets fight or pick character." ];
+    
     if (helpers.supportsAPL(handlerInput)) {
       var bgImage = await getRandomMainBGImage();
 
@@ -829,6 +856,9 @@ const YourStandingsHandler = {
       }   
       theNumber = theNumber + 1;
       }
+      var helpHints = ["If you wish to look at your stats just say my stats or statistics.","Have you play for a bit if so check out the leaderboards by saying rankings or leaderboards.",
+"Did you know there is a move list just ask for it, after you picked your character.", "Are you ready to rumble, if so say lets fight or pick character." ];
+
     var title2 = "Your top score: "+statsObject.highestScore + " at level "+ statsObject.highestScoreLevel + ". ";
     var title1 = "Your top score, "+statsObject.highestScore + " with "+ statsObject.topCharacter + ". ";
     if (helpers.supportsAPL(handlerInput)) {
@@ -877,7 +907,7 @@ const UseExperiencePackHandler = {
     var experiencePack = handlerInput.requestEnvelope.request.intent.slots.ExperiencePack.value;
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "useExperiencePack";
-    var charactersArray = sessionAttributes.charactersArray;
+    var charactersArray = sessionAttributes.timedCharacterArray;
 
     if (experiencePack === "copper" || experiencePack === "Copper") {
       if (attributes.hasOwnProperty("copperXP") || attributes.copperXP === 0) {
@@ -1153,6 +1183,8 @@ const HelpIntentHandler = {
       Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.HelpIntent';
   },
   async handle(handlerInput) {
+    var helpHints = ["If you wish to look at your stats just say my stats or statistics.","Have you play for a bit if so check out the leaderboards by saying rankings or leaderboards.",
+"Did you know there is a move list just ask for it, after you picked your character.", "Are you ready to rumble, if so say lets fight or pick character." ];
     var sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "helpIntent";
@@ -1171,6 +1203,9 @@ const CancelAndStopIntentHandler = {
         Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.StopIntent');
   },
   async handle(handlerInput) {
+    var goodbyes = ["Don't ever tell anyone anything. If you do, you start missing everybody.","Bye Felicia!","It is so hard to leave—until you leave. And then it is the easiest thing in the world","Later Gator, after awhile crocodile",
+"Adios amigos!","Thanks for coming, come back soon!","I'll see you in another life. When we are both cats.","You've changed me forever. And I'll never forget you.","This is not a goodbye, this is a thank you."];
+
     const speakOutput = await helpers.randomNoRepeats(goodbyes);
     return handlerInput.responseBuilder
       .speak(helpers.speechPolly(speakOutput))
@@ -1285,16 +1320,13 @@ getRandomMainBGImage = async () => {
   return randomBackground;
 };
 
-getRandomPowerImage = async () => {
-  var theBase = "appoBlEf8I1VQdU3r";
-  var characterdata = await helpers.httpGet(theBase, '', 'Characters');
-  var characterRecords = characterdata.records;
-  var charactersArray = [];
-  for (var i = 0; i < characterRecords.length;) {
-    charactersArray.push(characterRecords[i].fields.PWR_IMG);
+getRandomPowerImage = async (records) => {
+  var imageArray = [];
+  for (var i = 0; i < records.length;) {
+    imageArray.push(records[i].fields.PWR_IMG);
     i++;
   }
-  var powersImage = await helpers.randomNoRepeats(charactersArray);
+  var powersImage = await helpers.randomNoRepeats(imageArray);
   return powersImage;
 };
 
@@ -1371,13 +1403,19 @@ characterSelector = async (handlerInput, characters, character) => {
   }
 };
 characterFilter = async (character) => {
-  if (character === "mean" || character === "electric") {
+  if(character === "randle" || character === "randel" || character==="randy"){
+    character = "Randell";
+  }else if (character === "mean" || character === "electric") {
     character = "Electric Mean";
   } else if (character === "lars" || character === "thundersquat" || character === "thunder" || character === "Lars") {
     character = "Lars Thundersquat";
   } else if (character === "ss" || character === "sharpie" || character === "sharp" || character === "sharpy") {
     character = "Sharpie Sharp";
-  } else {
+  }else if (character === "chairity" || character === "chairty" || character === "charitie") {
+    character = "Charity";
+  }else if (character === "lillieth" || character === "lilleth" || character === "lillath" || character === "lilliath") {
+    character = "Lillith";
+  }else {
     character = character;
   }
   return character;

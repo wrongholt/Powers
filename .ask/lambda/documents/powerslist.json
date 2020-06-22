@@ -138,59 +138,7 @@
     },
     "onMount": [],
     "graphics": {},
-    "commands": {
-        "slideInRight": {
-            "parameters": [
-                "duration",
-                "distance",
-                "delay"
-            ],
-            "commands": [
-                {
-                    "type": "AnimateItem",
-                    "duration": "${duration}",
-                    "delay": "${delay || 0}",
-                    "value": [
-                          {
-                            "property": "transform",
-                            "from": [
-                                {
-                                    "translateX": 0
-                                }
-                            ],
-                            "to": [
-                                {
-                                    "translateX": "${distance && ('-' + distance) || '-500'}"
-                                }
-                            ]
-                        }
-                    
-                    ]
-                },
-                {
-                    "type": "AnimateItem",
-                    "duration": "${duration}",
-                    "delay": "${delay || 0}",
-                    "value": [
-                          {
-                            "property": "transform",
-                            "from": [
-                                {
-                                    "translateX": "${distance && ('-' + distance) || '-500'}"
-                                }
-                            ],
-                            "to": [
-                                {
-                                    "translateX": 0
-                                }
-                            ]
-                        }
-                    
-                    ]
-                }
-            ]
-        }
-    },
+    "commands": {},
     "layouts": {
         "FullHorizontalListItem": {
             "parameters": [
@@ -393,13 +341,6 @@
                                 "item": [
                                     {
                                         "type": "HorizontalListItem"
-                                    }
-                                ],
-                                "onMount": [
-                                    {
-                                        "type": "slideInRight",
-                                        "duration": 2000,
-                                        "delay": 500
                                     }
                                 ]
                             }
