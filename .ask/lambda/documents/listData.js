@@ -38,20 +38,20 @@ exports.powersListMainData = async(handlerInput) => {
         "listPage": {
             "listItems": [
             {
-                "listItemIdentifier": "Lillith",
-                "ordinalNumber": 1,
+                "listItemIdentifier": "SharpieSharp",
+                "ordinalNumber": 4,
                 "textContent": {
                     "primaryText": {
                         "type": "PlainText",
-                        "text": "Lillith"
+                        "text": "Sharpie Sharp"
                     },
                     "secondaryText": {
                         "type": "PlainText",
-                        "text": "Power: Poison Spray"
+                        "text": "Power: Spike Throw"
                     },
                     "thirdText": {
                       "type": "PlainText",
-                      "text": attributes.characters.Lillith.charLevel
+                      "text": attributes.characters["Sharpie Sharp"].charLevel
                     }
                 },
                 "image": {
@@ -60,13 +60,13 @@ exports.powersListMainData = async(handlerInput) => {
                     "largeSourceUrl": null,
                     "sources": [
                         {
-                            "url": "https://powers.s3.amazonaws.com/samy-saadi-fFC7IOFT-OM-unsplash.jpg",
+                            "url": "https://powers.s3.amazonaws.com/matteo-di-iorio-wkMd_DylG8I-unsplash.jpg",
                             "size": "small",
                             "widthPixels": 0,
                             "heightPixels": 0
                         },
                         {
-                            "url": "https://powers.s3.amazonaws.com/samy-saadi-fFC7IOFT-OM-unsplash.jpg",
+                            "url": "https://powers.s3.amazonaws.com/matteo-di-iorio-wkMd_DylG8I-unsplash.jpg",
                             "size": "large",
                             "widthPixels": 0,
                             "heightPixels": 0
@@ -79,20 +79,20 @@ exports.powersListMainData = async(handlerInput) => {
                     "largeSourceUrl": null,
                     "sources": [
                         {
-                            "url": "https://powers.s3.amazonaws.com/Lillith.png",
+                            "url": "https://powers.s3.amazonaws.com/SharpySharp.png",
                             "size": "small",
                             "widthPixels": 0,
                             "heightPixels": 0
                         },
                         {
-                            "url": "https://powers.s3.amazonaws.com/Lillith.png",
+                            "url": "https://powers.s3.amazonaws.com/SharpySharp.png",
                             "size": "large",
                             "widthPixels": 0,
                             "heightPixels": 0
                         }
                     ]
                 },
-                "token": "Lillith"
+                "token": "Sharpie Sharp"
             },
             {
                 "listItemIdentifier": "Randell",
@@ -152,20 +152,20 @@ exports.powersListMainData = async(handlerInput) => {
                 "token": "Randell"
             },
             {
-                "listItemIdentifier": "Charity",
-                "ordinalNumber": 3,
+                "listItemIdentifier": "Lillith",
+                "ordinalNumber": 1,
                 "textContent": {
                     "primaryText": {
                         "type": "PlainText",
-                        "text": "Charity"
+                        "text": "Lillith"
                     },
                     "secondaryText": {
                         "type": "PlainText",
-                        "text": "Power: Heel Stomp"
+                        "text": "Power: Poison Spray"
                     },
                     "thirdText": {
                       "type": "PlainText",
-                      "text": attributes.characters.Charity.charLevel
+                      "text": attributes.characters.Lillith.charLevel
                     }
                 },
                 "image": {
@@ -174,13 +174,13 @@ exports.powersListMainData = async(handlerInput) => {
                     "largeSourceUrl": null,
                     "sources": [
                         {
-                            "url": "https://powers.s3.amazonaws.com/efe-kurnaz-RnCPiXixooY-unsplash.jpg",
+                            "url": "https://powers.s3.amazonaws.com/samy-saadi-fFC7IOFT-OM-unsplash.jpg",
                             "size": "small",
                             "widthPixels": 0,
                             "heightPixels": 0
                         },
                         {
-                            "url": "https://powers.s3.amazonaws.com/efe-kurnaz-RnCPiXixooY-unsplash.jpg",
+                            "url": "https://powers.s3.amazonaws.com/samy-saadi-fFC7IOFT-OM-unsplash.jpg",
                             "size": "large",
                             "widthPixels": 0,
                             "heightPixels": 0
@@ -193,191 +193,20 @@ exports.powersListMainData = async(handlerInput) => {
                     "largeSourceUrl": null,
                     "sources": [
                         {
-                            "url": "https://powers.s3.amazonaws.com/Charity.png",
+                            "url": "https://powers.s3.amazonaws.com/Lillith.png",
                             "size": "small",
                             "widthPixels": 0,
                             "heightPixels": 0
                         },
                         {
-                            "url": "https://powers.s3.amazonaws.com/Charity.png",
+                            "url": "https://powers.s3.amazonaws.com/Lillith.png",
                             "size": "large",
                             "widthPixels": 0,
                             "heightPixels": 0
                         }
                     ]
                 },
-                "token": "Charity"
-            },
-            {
-                "listItemIdentifier": "SharpieSharp",
-                "ordinalNumber": 4,
-                "textContent": {
-                    "primaryText": {
-                        "type": "PlainText",
-                        "text": "Sharpie Sharp"
-                    },
-                    "secondaryText": {
-                        "type": "PlainText",
-                        "text": "Power: Spike Throw"
-                    },
-                    "thirdText": {
-                      "type": "PlainText",
-                      "text": attributes.characters["Sharpie Sharp"].charLevel
-                    }
-                },
-                "image": {
-                    "contentDescription": null,
-                    "smallSourceUrl": null,
-                    "largeSourceUrl": null,
-                    "sources": [
-                        {
-                            "url": "https://powers.s3.amazonaws.com/matteo-di-iorio-wkMd_DylG8I-unsplash.jpg",
-                            "size": "small",
-                            "widthPixels": 0,
-                            "heightPixels": 0
-                        },
-                        {
-                            "url": "https://powers.s3.amazonaws.com/matteo-di-iorio-wkMd_DylG8I-unsplash.jpg",
-                            "size": "large",
-                            "widthPixels": 0,
-                            "heightPixels": 0
-                        }
-                    ]
-                },
-                "image2": {
-                    "contentDescription": null,
-                    "smallSourceUrl": null,
-                    "largeSourceUrl": null,
-                    "sources": [
-                        {
-                            "url": "https://powers.s3.amazonaws.com/SharpySharp.png",
-                            "size": "small",
-                            "widthPixels": 0,
-                            "heightPixels": 0
-                        },
-                        {
-                            "url": "https://powers.s3.amazonaws.com/SharpySharp.png",
-                            "size": "large",
-                            "widthPixels": 0,
-                            "heightPixels": 0
-                        }
-                    ]
-                },
-                "token": "Sharpie Sharp"
-            },
-            {
-                "listItemIdentifier": "LarsThundersquat",
-                "ordinalNumber": 5,
-                "textContent": {
-                    "primaryText": {
-                        "type": "PlainText",
-                        "text": "Lars Thundersquat"
-                    },
-                    "secondaryText": {
-                        "type": "PlainText",
-                        "text": "Power: Thigh Crusher"
-                    },
-                    "thirdText": {
-                      "type": "PlainText",
-                      "text": attributes.characters["Lars Thundersquat"].charLevel
-                    }
-                },
-                "image": {
-                    "contentDescription": null,
-                    "smallSourceUrl": null,
-                    "largeSourceUrl": null,
-                    "sources": [
-                        {
-                            "url": "https://powers.s3.amazonaws.com/michael-shannon-iIrB37J5yfA-unsplash.jpg",
-                            "size": "small",
-                            "widthPixels": 0,
-                            "heightPixels": 0
-                        },
-                        {
-                            "url": "https://powers.s3.amazonaws.com/michael-shannon-iIrB37J5yfA-unsplash.jpg",
-                            "size": "large",
-                            "widthPixels": 0,
-                            "heightPixels": 0
-                        }
-                    ]
-                },
-                "image2": {
-                    "contentDescription": null,
-                    "smallSourceUrl": null,
-                    "largeSourceUrl": null,
-                    "sources": [
-                        {
-                            "url": "https://powers.s3.amazonaws.com/LarsThundersquat.png",
-                            "size": "small",
-                            "widthPixels": 0,
-                            "heightPixels": 0
-                        },
-                        {
-                            "url": "https://powers.s3.amazonaws.com/LarsThundersquat.png",
-                            "size": "large",
-                            "widthPixels": 0,
-                            "heightPixels": 0
-                        }
-                    ]
-                },
-                "token": "Lars Thundersquat"
-            },
-            {
-                "listItemIdentifier": "Edge",
-                "ordinalNumber": 6,
-                "textContent": {
-                    "primaryText": {
-                        "type": "PlainText",
-                        "text": "Edge"
-                    },
-                    "secondaryText": {
-                        "type": "PlainText",
-                        "text": "Power: Speed Attack"
-                    },
-                    "thirdText": {
-                      "type": "PlainText",
-                      "text": attributes.characters.Edge.charLevel
-                    }
-                },
-                "image": {
-                    "contentDescription": null,
-                    "smallSourceUrl": null,
-                    "largeSourceUrl": null,
-                    "sources": [
-                        {
-                            "url": "https://powers.s3.amazonaws.com/deglee-degi-wQImoykAwGs-unsplash.jpg",
-                            "size": "small",
-                            "widthPixels": 0,
-                            "heightPixels": 0
-                        },
-                        {
-                            "url": "https://powers.s3.amazonaws.com/deglee-degi-wQImoykAwGs-unsplash.jpg",
-                            "size": "large",
-                            "widthPixels": 0,
-                            "heightPixels": 0
-                        }
-                    ]
-                },
-                "image2": {
-                    "contentDescription": null,
-                    "smallSourceUrl": null,
-                    "largeSourceUrl": null,
-                    "sources": [
-                        {
-                            "url": "https://powers.s3.amazonaws.com/Edge.png",
-                            "size": "small",
-                            "widthPixels": 0,
-                            "heightPixels": 0
-                        },
-                        {
-                            "url": "https://powers.s3.amazonaws.com/Edge.png",
-                            "size": "large",
-                            "widthPixels": 0,
-                            "heightPixels": 0
-                        }
-                    ]
-                },
-                "token": "Edge"
+                "token": "Lillith"
             },
             {
                 "listItemIdentifier": "Argus",
@@ -437,20 +266,20 @@ exports.powersListMainData = async(handlerInput) => {
                 "token": "Argus"
             },
             {
-                "listItemIdentifier": "Karrigan",
-                "ordinalNumber": 8,
+                "listItemIdentifier": "Charity",
+                "ordinalNumber": 3,
                 "textContent": {
                     "primaryText": {
                         "type": "PlainText",
-                        "text": "Karrigan"
+                        "text": "Charity"
                     },
                     "secondaryText": {
                         "type": "PlainText",
-                        "text": "Power: Stone Throw"
+                        "text": "Power: Heel Stomp"
                     },
                     "thirdText": {
                       "type": "PlainText",
-                      "text": attributes.characters.Karrigan.charLevel
+                      "text": attributes.characters.Charity.charLevel
                     }
                 },
                 "image": {
@@ -459,13 +288,13 @@ exports.powersListMainData = async(handlerInput) => {
                     "largeSourceUrl": null,
                     "sources": [
                         {
-                            "url": "https://powers.s3.amazonaws.com/carles-rabada-gwwWhABtohs-unsplash.jpg",
+                            "url": "https://powers.s3.amazonaws.com/efe-kurnaz-RnCPiXixooY-unsplash.jpg",
                             "size": "small",
                             "widthPixels": 0,
                             "heightPixels": 0
                         },
                         {
-                            "url": "https://powers.s3.amazonaws.com/carles-rabada-gwwWhABtohs-unsplash.jpg",
+                            "url": "https://powers.s3.amazonaws.com/efe-kurnaz-RnCPiXixooY-unsplash.jpg",
                             "size": "large",
                             "widthPixels": 0,
                             "heightPixels": 0
@@ -478,20 +307,20 @@ exports.powersListMainData = async(handlerInput) => {
                     "largeSourceUrl": null,
                     "sources": [
                         {
-                            "url": "https://powers.s3.amazonaws.com/Karrigan.png",
+                            "url": "https://powers.s3.amazonaws.com/Charity.png",
                             "size": "small",
                             "widthPixels": 0,
                             "heightPixels": 0
                         },
                         {
-                            "url": "https://powers.s3.amazonaws.com/Karrigan.png",
+                            "url": "https://powers.s3.amazonaws.com/Charity.png",
                             "size": "large",
                             "widthPixels": 0,
                             "heightPixels": 0
                         }
                     ]
                 },
-                "token": "Karrigan"
+                "token": "Charity"
             },
             {
                 "listItemIdentifier": "ElectricMean",
@@ -549,7 +378,179 @@ exports.powersListMainData = async(handlerInput) => {
                     ]
                 },
                 "token": "Electric Mean"
-            }
+            },
+            {
+                "listItemIdentifier": "Karrigan",
+                "ordinalNumber": 8,
+                "textContent": {
+                    "primaryText": {
+                        "type": "PlainText",
+                        "text": "Karrigan"
+                    },
+                    "secondaryText": {
+                        "type": "PlainText",
+                        "text": "Power: Stone Throw"
+                    },
+                    "thirdText": {
+                      "type": "PlainText",
+                      "text": attributes.characters.Karrigan.charLevel
+                    }
+                },
+                "image": {
+                    "contentDescription": null,
+                    "smallSourceUrl": null,
+                    "largeSourceUrl": null,
+                    "sources": [
+                        {
+                            "url": "https://powers.s3.amazonaws.com/carles-rabada-gwwWhABtohs-unsplash.jpg",
+                            "size": "small",
+                            "widthPixels": 0,
+                            "heightPixels": 0
+                        },
+                        {
+                            "url": "https://powers.s3.amazonaws.com/carles-rabada-gwwWhABtohs-unsplash.jpg",
+                            "size": "large",
+                            "widthPixels": 0,
+                            "heightPixels": 0
+                        }
+                    ]
+                },
+                "image2": {
+                    "contentDescription": null,
+                    "smallSourceUrl": null,
+                    "largeSourceUrl": null,
+                    "sources": [
+                        {
+                            "url": "https://powers.s3.amazonaws.com/Karrigan.png",
+                            "size": "small",
+                            "widthPixels": 0,
+                            "heightPixels": 0
+                        },
+                        {
+                            "url": "https://powers.s3.amazonaws.com/Karrigan.png",
+                            "size": "large",
+                            "widthPixels": 0,
+                            "heightPixels": 0
+                        }
+                    ]
+                },
+                "token": "Karrigan"
+            },
+            {
+                "listItemIdentifier": "Edge",
+                "ordinalNumber": 6,
+                "textContent": {
+                    "primaryText": {
+                        "type": "PlainText",
+                        "text": "Edge"
+                    },
+                    "secondaryText": {
+                        "type": "PlainText",
+                        "text": "Power: Speed Attack"
+                    },
+                    "thirdText": {
+                      "type": "PlainText",
+                      "text": attributes.characters.Edge.charLevel
+                    }
+                },
+                "image": {
+                    "contentDescription": null,
+                    "smallSourceUrl": null,
+                    "largeSourceUrl": null,
+                    "sources": [
+                        {
+                            "url": "https://powers.s3.amazonaws.com/deglee-degi-wQImoykAwGs-unsplash.jpg",
+                            "size": "small",
+                            "widthPixels": 0,
+                            "heightPixels": 0
+                        },
+                        {
+                            "url": "https://powers.s3.amazonaws.com/deglee-degi-wQImoykAwGs-unsplash.jpg",
+                            "size": "large",
+                            "widthPixels": 0,
+                            "heightPixels": 0
+                        }
+                    ]
+                },
+                "image2": {
+                    "contentDescription": null,
+                    "smallSourceUrl": null,
+                    "largeSourceUrl": null,
+                    "sources": [
+                        {
+                            "url": "https://powers.s3.amazonaws.com/Edge.png",
+                            "size": "small",
+                            "widthPixels": 0,
+                            "heightPixels": 0
+                        },
+                        {
+                            "url": "https://powers.s3.amazonaws.com/Edge.png",
+                            "size": "large",
+                            "widthPixels": 0,
+                            "heightPixels": 0
+                        }
+                    ]
+                },
+                "token": "Edge"
+            },
+            {
+                "listItemIdentifier": "LarsThundersquat",
+                "ordinalNumber": 5,
+                "textContent": {
+                    "primaryText": {
+                        "type": "PlainText",
+                        "text": "Lars Thundersquat"
+                    },
+                    "secondaryText": {
+                        "type": "PlainText",
+                        "text": "Power: Thigh Crusher"
+                    },
+                    "thirdText": {
+                      "type": "PlainText",
+                      "text": attributes.characters["Lars Thundersquat"].charLevel
+                    }
+                },
+                "image": {
+                    "contentDescription": null,
+                    "smallSourceUrl": null,
+                    "largeSourceUrl": null,
+                    "sources": [
+                        {
+                            "url": "https://powers.s3.amazonaws.com/michael-shannon-iIrB37J5yfA-unsplash.jpg",
+                            "size": "small",
+                            "widthPixels": 0,
+                            "heightPixels": 0
+                        },
+                        {
+                            "url": "https://powers.s3.amazonaws.com/michael-shannon-iIrB37J5yfA-unsplash.jpg",
+                            "size": "large",
+                            "widthPixels": 0,
+                            "heightPixels": 0
+                        }
+                    ]
+                },
+                "image2": {
+                    "contentDescription": null,
+                    "smallSourceUrl": null,
+                    "largeSourceUrl": null,
+                    "sources": [
+                        {
+                            "url": "https://powers.s3.amazonaws.com/LarsThundersquat.png",
+                            "size": "small",
+                            "widthPixels": 0,
+                            "heightPixels": 0
+                        },
+                        {
+                            "url": "https://powers.s3.amazonaws.com/LarsThundersquat.png",
+                            "size": "large",
+                            "widthPixels": 0,
+                            "heightPixels": 0
+                        }
+                    ]
+                },
+                "token": "Lars Thundersquat"
+            }    
+            
         ]
         }
     }

@@ -1,0 +1,98 @@
+2020-06-23T17:41:58.066Z error: bst-test            Error using bst-test on Node: v10.15.3
+2020-06-23T17:41:58.068Z error: bst-test            Error: The interaction model for your Alexa Skill could not be found under:
+./models/en-US.json
+Please provide the correct location of the Interaction Model.
+    at Function.Object.<anonymous>.InteractionModel.fromFile (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\node_modules\virtual-alexa\lib\src\model\InteractionModel.js:51:23)
+    at VirtualAlexaBuilder.Object.<anonymous>.VirtualAlexaBuilder.create (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\node_modules\virtual-alexa\lib\src\core\VirtualAlexa.js:169:57)
+    at VirtualAlexaInvoker.before (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\VirtualAlexaInvoker.js:58:48)
+    at TestRunner.<anonymous> (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:155:25)
+    at Generator.next (<anonymous>)
+    at asyncGeneratorStep (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:1:130)
+    at _next (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:3:194)
+    at C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:3:364
+    at new Promise (<anonymous>)
+    at TestRunner.<anonymous> (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:3:97)
+2020-06-23T17:43:51.388Z error: bst-test            Error using bst-test on Node: v10.15.3
+2020-06-23T17:43:51.391Z error: bst-test            Error: The interaction model for your Alexa Skill could not be found under:
+./models/en-US.json
+Please provide the correct location of the Interaction Model.
+    at Function.Object.<anonymous>.InteractionModel.fromFile (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\node_modules\virtual-alexa\lib\src\model\InteractionModel.js:51:23)
+    at VirtualAlexaBuilder.Object.<anonymous>.VirtualAlexaBuilder.create (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\node_modules\virtual-alexa\lib\src\core\VirtualAlexa.js:169:57)
+    at VirtualAlexaInvoker.before (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\VirtualAlexaInvoker.js:58:48)
+    at TestRunner.<anonymous> (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:155:25)
+    at Generator.next (<anonymous>)
+    at asyncGeneratorStep (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:1:130)
+    at _next (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:3:194)
+    at C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:3:364
+    at new Promise (<anonymous>)
+    at TestRunner.<anonymous> (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:3:97)
+2020-06-23T17:45:21.995Z error: bst-test            Error using bst-test on Node: v10.15.3
+2020-06-23T17:45:21.997Z error: bst-test            Error: The interaction model for your Alexa Skill could not be found under:
+./models/en-US.json
+Please provide the correct location of the Interaction Model.
+    at Function.Object.<anonymous>.InteractionModel.fromFile (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\node_modules\virtual-alexa\lib\src\model\InteractionModel.js:51:23)
+    at VirtualAlexaBuilder.Object.<anonymous>.VirtualAlexaBuilder.create (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\node_modules\virtual-alexa\lib\src\core\VirtualAlexa.js:169:57)
+    at VirtualAlexaInvoker.before (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\VirtualAlexaInvoker.js:58:48)
+    at TestRunner.<anonymous> (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:155:25)
+    at Generator.next (<anonymous>)
+    at asyncGeneratorStep (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:1:130)
+    at _next (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:3:194)
+    at C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:3:364
+    at new Promise (<anonymous>)
+    at TestRunner.<anonymous> (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:3:97)
+2020-06-23T17:47:41.626Z error: bst-test            Error using bst-test on Node: v10.15.3
+2020-06-23T17:47:41.629Z error: bst-test            Error: The interaction model for your Alexa Skill could not be found under:
+./models/en-US.json
+Please provide the correct location of the Interaction Model.
+    at Function.Object.<anonymous>.InteractionModel.fromFile (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\node_modules\virtual-alexa\lib\src\model\InteractionModel.js:51:23)
+    at VirtualAlexaBuilder.Object.<anonymous>.VirtualAlexaBuilder.create (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\node_modules\virtual-alexa\lib\src\core\VirtualAlexa.js:169:57)
+    at VirtualAlexaInvoker.before (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\VirtualAlexaInvoker.js:58:48)
+    at TestRunner.<anonymous> (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:155:25)
+    at Generator.next (<anonymous>)
+    at asyncGeneratorStep (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:1:130)
+    at _next (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:3:194)
+    at C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:3:364
+    at new Promise (<anonymous>)
+    at TestRunner.<anonymous> (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:3:97)
+2020-06-23T17:48:21.938Z error: bst-test            Error using bst-test on Node: v10.15.3
+2020-06-23T17:48:21.941Z error: bst-test            Error: The interaction model for your Alexa Skill could not be found under:
+./models/en-US.json
+Please provide the correct location of the Interaction Model.
+    at Function.Object.<anonymous>.InteractionModel.fromFile (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\node_modules\virtual-alexa\lib\src\model\InteractionModel.js:51:23)
+    at VirtualAlexaBuilder.Object.<anonymous>.VirtualAlexaBuilder.create (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\node_modules\virtual-alexa\lib\src\core\VirtualAlexa.js:169:57)
+    at VirtualAlexaInvoker.before (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\VirtualAlexaInvoker.js:58:48)
+    at TestRunner.<anonymous> (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:155:25)
+    at Generator.next (<anonymous>)
+    at asyncGeneratorStep (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:1:130)
+    at _next (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:3:194)
+    at C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:3:364
+    at new Promise (<anonymous>)
+    at TestRunner.<anonymous> (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:3:97)
+2020-06-23T17:49:38.864Z error: bst-test            Error using bst-test on Node: v10.15.3
+2020-06-23T17:49:38.867Z error: bst-test            Error: The interaction model for your Alexa Skill could not be found under:
+./models/en-US.json
+Please provide the correct location of the Interaction Model.
+    at Function.Object.<anonymous>.InteractionModel.fromFile (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\node_modules\virtual-alexa\lib\src\model\InteractionModel.js:51:23)
+    at VirtualAlexaBuilder.Object.<anonymous>.VirtualAlexaBuilder.create (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\node_modules\virtual-alexa\lib\src\core\VirtualAlexa.js:169:57)
+    at VirtualAlexaInvoker.before (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\VirtualAlexaInvoker.js:58:48)
+    at TestRunner.<anonymous> (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:155:25)
+    at Generator.next (<anonymous>)
+    at asyncGeneratorStep (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:1:130)
+    at _next (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:3:194)
+    at C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:3:364
+    at new Promise (<anonymous>)
+    at TestRunner.<anonymous> (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:3:97)
+2020-06-23T17:51:36.465Z error: bst-test            Error using bst-test on Node: v10.15.3
+2020-06-23T17:51:36.470Z error: bst-test            Error: The interaction model for your Alexa Skill could not be found under:
+./models/en-US.json
+Please provide the correct location of the Interaction Model.
+    at Function.Object.<anonymous>.InteractionModel.fromFile (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\node_modules\virtual-alexa\lib\src\model\InteractionModel.js:51:23)
+    at VirtualAlexaBuilder.Object.<anonymous>.VirtualAlexaBuilder.create (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\node_modules\virtual-alexa\lib\src\core\VirtualAlexa.js:169:57)
+    at VirtualAlexaInvoker.before (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\VirtualAlexaInvoker.js:58:48)
+    at TestRunner.<anonymous> (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:155:25)
+    at Generator.next (<anonymous>)
+    at asyncGeneratorStep (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:1:130)
+    at _next (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:3:194)
+    at C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:3:364
+    at new Promise (<anonymous>)
+    at TestRunner.<anonymous> (C:\Users\wrongholt\AppData\Roaming\npm\node_modules\bespoken-tools\node_modules\skill-testing-ml\dist\lib\runner\TestRunner.js:3:97)

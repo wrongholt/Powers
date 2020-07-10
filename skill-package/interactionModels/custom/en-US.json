@@ -84,6 +84,9 @@
                     "slots": [],
                     "samples": [
                         "lets fight",
+                        "kick butt",
+                        "lets kick butt",
+                        "i want to kick butt",
                         "lets fight again",
                         "i want to fight",
                         "fight",
@@ -142,6 +145,15 @@
                         "see the stats",
                         "view the stats",
                         "view my stats"
+                    ]
+                },
+                {
+                    "name":"FightStartIntent",
+                    "slots":[],
+                    "samples":[
+                        "fight again",
+                        "repeat fight",
+                        "restart fight"
                     ]
                 },
                 {

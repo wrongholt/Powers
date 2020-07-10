@@ -174,11 +174,6 @@
                         },
                         {
                             "type": "Text",
-                            "text": "Level ${data.textContent.thirdText.text} ",
-                            "style": "textStyleDetails"
-                        },
-                        {
-                            "type": "Text",
                             "text": "${ordinal} | ${listLength}",
                             "paddingBottom": "20dp",
                             "color": "white",
@@ -235,11 +230,6 @@
                             "text": "${data.textContent.secondaryText.text}",
                             "style": "textStyleDetails",
                             "spacing": 4
-                        },
-                        {
-                            "type": "Text",
-                            "text": "Level ${data.textContent.thirdText.text} ",
-                            "style": "textStyleDetails"
                         }
                     ]
                 }

@@ -8,11 +8,13 @@ const {
 var Airtable = require('airtable');
 
 const mainAPL = require('./documents/main.json');
+const mainAPL2 = require('./documents/main2.json');
 const listAPL = require('./documents/powerslist');
 const listAPL2 = require('./documents/powerslist2.json');
 const stats = require('./documents/stats.json');
 const standings = require('./documents/standings.json');
 const listData = require('./documents/listData');
+const listData2 = require('./documents/listData.json');
 const fightAPL = require('./documents/fighting.json');
 const fightStartAPL = require('./documents/fightingStart.json');
 const fightEndAPL = require('./documents/fightingEnd.json');
@@ -28,20 +30,30 @@ const variables = require('./variables');
 
 const LaunchRequestHandler = {
   canHandle(handlerInput) {
-    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
+    return (Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest'||
+    (Alexa.getRequestType(handlerInput.requestEnvelope) === 'Alexa.Presentation.APL.UserEvent' &&
+        handlerInput.requestEnvelope.request.arguments[0] === 'Fight'));
   },
   async handle(handlerInput) {
     var speakOutput = "";
     var theBase = "appoBlEf8I1VQdU3r";
-    var characterdata = await helpers.httpGet(theBase, '', 'Characters');
-    var characterRecords = characterdata.records;
+    
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "launch";
+    if(sessionAttributes.hasOwnProperty("computer")){
+      sessionAttributes.player = {};
+    }
+    if(sessionAttributes.hasOwnProperty("playerPower")){
+      sessionAttributes.playerPower = '';
+    }
+    if(sessionAttributes.hasOwnProperty("player")){
+      sessionAttributes.computer = {};
+    }
     var attributes = await getAttributes(handlerInput);
     var name;
     console.log("IN LAUNCH WHERE COMING FROM---->>>>" + sessionAttributes.previousIntent);
-
+ 
     if (Object.keys(attributes).length === 0) {
       speakOutput = '<break strength="strong"/><p>Welcome, to <phoneme alphabet="ipa" ph="pɑwɚrs">Powers</phoneme>. I am  <say-as interpret-as="spell-out">G34XY</say-as>, a <phoneme alphabet="ipa" ph="pɑwɚrs">Powers</phoneme> fighter helper. </p><p>I am here to help you in any way possible through out any fight you may ask for my help by saying <break strength="strong"/> move list <break strength="strong"/>or bot help, with this I can show you the possible moves you can than say in the fight.</p> I will try to help in any way possible.<break strength="strong"/><amazon:emotion name="excited" intensity="high"> Except, I cannot fight for you!!</amazon:emotion> That is not in my contract you hear me <break strength="strong"/><emphasis level="strong">I do not fight!</emphasis>  Let\'s start by getting your name, we use this to keep track of your stats and how you are doing on the leaderboard. Just say, my name is.';
     } else {
@@ -56,6 +68,9 @@ const LaunchRequestHandler = {
       ];
       speakOutput = await helpers.randomNoRepeats(launch2);
     }
+    var charactersArray = [];
+    var characterdata = await helpers.httpGet(theBase, '', 'Characters');
+    var characterRecords = characterdata.records;
     if (!sessionAttributes.hasOwnProperty('characterRecords')) {
       sessionAttributes.characterRecords = [];
     }
@@ -63,7 +78,7 @@ const LaunchRequestHandler = {
       attributes.characters = {};
     }
     sessionAttributes.characterRecords = characterRecords;
-    var charactersArray = [];
+    
    for (var i = 0; i < characterRecords.length;) {
       charactersArray.push(characterRecords[i].fields.Name);
 
@@ -89,13 +104,14 @@ const LaunchRequestHandler = {
     } else if (sessionAttributes.previousIntent === "GoldXP") {
       speakOutput = "Outstanding you just bought the Gold Experience Pack. If you wish to use them just say, Use Gold Pack.";
     }
-    
+    var textOutput = speakOutput.replace( /(<([^>]+)>)/ig, '');
     await saveAttributes(handlerInput, attributes);
     if (helpers.supportsAPL(handlerInput)) {
       var power1 = await getRandomPowerImage(characterRecords);
     var power2 = await getRandomPowerImage(characterRecords);
     var bgImage = await getRandomMainBGImage();
-      return handlerInput.responseBuilder
+      if(!attributes.name){
+        return handlerInput.responseBuilder
         .speak(helpers.speechPolly(speakOutput))
         .reprompt(helpers.speechPolly(speakOutput))
         .addDirective({
@@ -114,11 +130,38 @@ const LaunchRequestHandler = {
           }
         })
         .getResponse();
+      }else{
+        if (Alexa.getRequestType(handlerInput.requestEnvelope) === 'Alexa.Presentation.APL.UserEvent' && handlerInput.requestEnvelope.request.arguments[0] === 'Fight') {
+          return CharactersSelectionScreenHandler.handle(handlerInput);
+        } 
+        if (Alexa.getRequestType(handlerInput.requestEnvelope) === 'Alexa.Presentation.APL.UserEvent' && handlerInput.requestEnvelope.request.arguments2[0] === 'Store') {
+          return GetListofISPsHandler.handle(handlerInput);
+        }
+        return handlerInput.responseBuilder
+        .speak(helpers.speechPolly(speakOutput))
+        .reprompt(helpers.speechPolly(speakOutput))
+        .addDirective({
+          type: 'Alexa.Presentation.APL.RenderDocument',
+          version: '1.3',
+          document: mainAPL2,
+          datasources: {
+            "mainData": {
+              "type": "object",
+              "properties": {
+                "power1": power1,
+                "power2": power2,
+                "bgImage": bgImage
+              }
+            }
+          }
+        })
+        .getResponse();
+      } 
     } else {
       return handlerInput.responseBuilder
         .speak(helpers.speechPolly(speakOutput))
         .reprompt(helpers.speechPolly(speakOutput))
-        .withSimpleCard("Powers", speakOutput)
+        .withSimpleCard("Powers", textOutput)
         .getResponse();
     }
   },
@@ -164,8 +207,11 @@ const NameIntentHandler = {
     console.log("IN GET CUSTOM NAME---->>>>" + userName);
 
       }
+      if(userName.includes("is")){
+      userName.replace('is','');
+      }
       userName = helpers.capitalize_Words(userName);
-
+      
       await new Promise((resolve, reject) => {
         base('PlayerCharts').create([{
           "fields": {
@@ -237,7 +283,7 @@ const PracticeRoundIntentHandler = {
      
       await saveAttributes(handlerInput,attributes);
    
-
+    var textOutput = speakOutput.replace( /(<([^>]+)>)/ig, '');
       if (helpers.supportsAPL(handlerInput)) {
         var bgImage = await getRandomMainBGImage();
         return handlerInput.responseBuilder
@@ -263,7 +309,7 @@ const PracticeRoundIntentHandler = {
         return handlerInput.responseBuilder
           .speak(helpers.speechPolly(speakOutput))
           .reprompt(helpers.speechPolly(speakOutput))
-          .withSimpleCard("Fight", speakOutput)
+          .withSimpleCard("Fight", textOutput)
           .getResponse();
       }
     }
@@ -272,23 +318,26 @@ const PracticeRoundIntentHandler = {
 const CharactersSelectionScreenHandler = {
   canHandle(handlerInput) {
     return (Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
-      Alexa.getIntentName(handlerInput.requestEnvelope) === 'CharacterSelectionScreenIntent' ||
-      (Alexa.getRequestType(handlerInput.requestEnvelope) === 'Alexa.Presentation.APL.UserEvent' &&
+    Alexa.getIntentName(handlerInput.requestEnvelope) === 'CharacterSelectionScreenIntent' ||
+    (Alexa.getRequestType(handlerInput.requestEnvelope) === 'Alexa.Presentation.APL.UserEvent' &&
         handlerInput.requestEnvelope.request.arguments.length > 0 &&
         handlerInput.requestEnvelope.request.arguments[0] === 'ItemSelected'));
   },
   async handle(handlerInput) {
     var attributes = await getAttributes(handlerInput);
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-    if (Object.keys(sessionAttributes).length === 0) {
-      return LaunchRequestHandler.handle(handlerInput);
-    }
     var charactersArray;   
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "characterSelection";
     if (Object.keys(attributes).length === 0) {
       return LaunchRequestHandler.handle(handlerInput);
     }
+    if(sessionAttributes.hasOwnProperty("player") ){
+      sessionAttributes.player = {};
+    }if (sessionAttributes.hasOwnProperty('computer')){
+      sessionAttributes.computer = {};
+    }
+
     if (!sessionAttributes.hasOwnProperty('characterRecords')) {
       var theBase = "appoBlEf8I1VQdU3r";
     var characterdata = await helpers.httpGet(theBase, '', 'Characters');
@@ -303,28 +352,21 @@ const CharactersSelectionScreenHandler = {
     }else{
       charactersArray = sessionAttributes.charactersArray;
     }
-    
-    console.log("CHARACTER SELECTION"+charactersArray);
+    console.log(sessionAttributes);
+    console.log("CHARACTER SELECTION "+charactersArray);
     attributes.isPractice = false;
     await saveAttributes(handlerInput,attributes);
     if (charactersArray.length > 2) {
-      charactersArray = charactersArray.slice(1).join(', <break time=".4s"/>').replace(/, ([^,]*)$/, '<break time=".4s"/> or<break time=".3s"/> $1');
+      charactersArray = charactersArray.slice(0).join(', <break time=".4s"/>').replace(/, ([^,]*)$/, '<break time=".4s"/> or<break time=".3s"/> $1');
     }
     sessionAttributes.timedCharacterArray = charactersArray;
 
     var speakOutput;
-    if (!sessionAttributes.playerPower) {
       var speakArray = ["You can pick from any of these characters, just say thier name or you can have me choose for you by saying choose for me: " + charactersArray + '!',
     "Are you ready? You can pick from these characters, just by saying their name or you could say choose for me and I will grab someone by random. The characters are: "+ charactersArray + '!',
   "Who's ready to rumble!? I am not, but I am not also a character you can choose, those are: " + charactersArray + ". You may also say, random character and I will go and select the best random character you could get!"];
       speakOutput = await helpers.randomNoRepeats(speakArray);
-    }else{
-      var whoToFight = ["Alright, lets go " + sessionAttributes.playerPower + "! Now who do you want to fight, " + charactersArray + "? You may say, the characters name or random character.",
-      "Are you serious, " + sessionAttributes.playerPower + " is my favorite! Who would you like to fight, " + charactersArray + "? Don't forget that you can say the characters name or random character.",
-      "Everyone, we got " + sessionAttributes.playerPower + " in the house! Who are they going to fight against, " + charactersArray + "? Did I tell you, that you may say the characters name or random character.",
-    ];
-     speakOutput = await helpers.randomNoRepeats(whoToFight);
-    }
+    
 
     if (helpers.supportsAPL(handlerInput)) {
       if (Alexa.getRequestType(handlerInput.requestEnvelope) === 'Alexa.Presentation.APL.UserEvent' && handlerInput.requestEnvelope.request.arguments[0] === 'ItemSelected') {
@@ -334,19 +376,19 @@ const CharactersSelectionScreenHandler = {
         return CharactersSelectionScreenTwoHandler.handle(handlerInput);
       }
       return handlerInput.responseBuilder
-        .speak(helpers.speechPolly(speakOutput))
+      .addDirective({
+        type: 'Alexa.Presentation.APL.RenderDocument',
+        version: '1.3',
+        document: listAPL,
+        datasources: listData2
+      })  
+      .speak(helpers.speechPolly(speakOutput))
         .reprompt(helpers.speechPolly(speakOutput))
-        .addDirective({
-          type: 'Alexa.Presentation.APL.RenderDocument',
-          version: '1.3',
-          document: listAPL,
-          datasources: await listData.powersListMainData(handlerInput)
-        })
         .getResponse();
     } else {
       return handlerInput.responseBuilder
         .speak(helpers.speechPolly(speakOutput))
-        .reprompt()
+        .reprompt(helpers.speechPolly(speakOutput))
         .getResponse();
     }
   }
@@ -355,8 +397,8 @@ const CharactersSelectionScreenHandler = {
 const CharactersSelectionScreenTwoHandler = {
   canHandle(handlerInput) {
     return (Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
-      Alexa.getIntentName(handlerInput.requestEnvelope) === 'CharacterSelectionTwoScreenIntent' ||
-      (Alexa.getRequestType(handlerInput.requestEnvelope) === 'Alexa.Presentation.APL.UserEvent' &&
+    Alexa.getIntentName(handlerInput.requestEnvelope) === 'CharacterSelectionScreenTwoIntent' ||
+    (Alexa.getRequestType(handlerInput.requestEnvelope) === 'Alexa.Presentation.APL.UserEvent' &&
         handlerInput.requestEnvelope.request.arguments.length > 0 &&
         handlerInput.requestEnvelope.request.arguments[0] === 'SecondItemSelected'));
   },
@@ -389,13 +431,13 @@ const CharactersSelectionScreenTwoHandler = {
           type: 'Alexa.Presentation.APL.RenderDocument',
           version: '1.3',
           document: listAPL2,
-          datasources: await listData.powersListMainData(handlerInput)
+          datasources: listData2
         })
         .getResponse();
     } else {
       return handlerInput.responseBuilder
         .speak(helpers.speechPolly(speakOutput))
-        .reprompt()
+        .reprompt(helpers.speechPolly(speakOutput))
         .getResponse();
     }
   }
@@ -475,7 +517,7 @@ const FightStartHandler = {
 
     }
 
-
+    var textOutput = speakOutput.replace( /(<([^>]+)>)/ig, '');
     if (helpers.supportsAPL(handlerInput)) {
       sessionAttributes.bgImageFighting = await getRandomMainBGImage();
       var bgImage = sessionAttributes.bgImageFighting;
@@ -504,7 +546,7 @@ const FightStartHandler = {
       return handlerInput.responseBuilder
         .speak(helpers.speechPolly(speakOutput))
         .reprompt(helpers.speechPolly(speakOutput))
-        .withSimpleCard("Fight", speakOutput)
+        .withSimpleCard("Fight", textOutput)
         .getResponse();
     }
   }
@@ -527,8 +569,6 @@ const PlayerFightHandler = {
     
     var speakOutput;
     var audio;
-    
-
     if (move === "dodge" || move === "block" || move === "dip" || move === "duck" || move === "dive" || move === "blocked") {
       speakOutput = await playerBlocked(handlerInput, move);
     } else {
@@ -542,7 +582,6 @@ const PlayerFightHandler = {
           
         } else {
           speakOutput = "Your " + sessionAttributes.playerMoveData.Name + " did " + sessionAttributes.playerMoveData.Damage + " points of damage to " + sessionAttributes.computer.Name + "! They now have " + sessionAttributes.computersHealth + " points left!";
-          
         }
       }
       if (sessionAttributes.playerPowerAttackAvail === true & move === "use power move" || sessionAttributes.playerPowerAttackAvail === true & move === "power move") {
@@ -552,7 +591,7 @@ const PlayerFightHandler = {
           speakOutput = audio + "You just used " + sessionAttributes.player.POWER_ATK + " healing yourself for " + sessionAttributes.player.POWER_DMG + " points! You now have " + sessionAttributes.playersHealth + " points!";
           
         } else {
-          speakOutput = audio + "You just used " + sessionAttributes.player.POWER_ATK + " doing  a total of " + sessionAttributes.player.POWER_DMG + " damage to " + sessionAttributes.computer.Name + "! They now have " + sessionAttributes.computersHealth + " points left!";
+          speakOutput = audio + "You just used " + sessionAttributes.player.POWER_ATK + " doing a total of " + sessionAttributes.player.POWER_DMG + " damage to " + sessionAttributes.computer.Name + "! They now have " + sessionAttributes.computersHealth + " points left!";
           
         }
         sessionAttributes.playerPowerAttackAvail = false;
@@ -658,7 +697,6 @@ console.log("IN FIGHT END---->>>>");
     }
     if (helpers.supportsAPL(handlerInput)) {
       var bgImage = sessionAttributes.bgImageFighting;
-      handlerInput.attributesManager.setSessionAttributes({});
       return handlerInput.responseBuilder
         .speak(helpers.speechPolly(speakOutput))
         .reprompt(helpers.speechPolly(speakOutput))
@@ -681,7 +719,6 @@ console.log("IN FIGHT END---->>>>");
         })
         .getResponse();
     } else {
-      handlerInput.attributesManager.setSessionAttributes({});
       return handlerInput.responseBuilder
         .speak(helpers.speechPolly(speakOutput))
         .reprompt()
@@ -732,7 +769,7 @@ console.log("IN MOVE LIST---->>>>");
           .getResponse();
       }
     }else{
-      speakOutput = await moveListSpeak(handlerInput);
+      speakOutput = await moveListSpeak(handlerInput) + " Say a move or the name of the move to get back to the fight.";
       if (helpers.supportsAPL(handlerInput)) {
         return handlerInput.responseBuilder
           .speak(helpers.speechPolly(speakOutput))
@@ -784,8 +821,8 @@ const YourStatsHandler = {
     var playerName = attributes.name;
     var statsObject = await statsData(handlerInput);
     playerName = helpers.capitalize_Words(playerName);
-    speakOutput = "The stats for " + playerName + " are the following: " + statsObject.speakOutput;
-    var helpHints = ["If you wish to look at your stats just say my stats or statistics.","Have you play for a bit if so check out the leaderboards by saying rankings or leaderboards.",
+    speakOutput = "The stats for " + playerName + " are the following: " + statsObject.speakOutput + ". Say lets fight to pick your character. ";
+    var helpHints = ["Did you know there is a store, say what can I buy.","Have you play for a bit if so check out the leaderboards by saying rankings or leaderboards.",
     "Did you know there is a move list just ask for it, after you picked your character.", "Are you ready to rumble, if so say lets fight or pick character." ];
     
     if (helpers.supportsAPL(handlerInput)) {
@@ -832,33 +869,36 @@ const YourStandingsHandler = {
   async handle(handlerInput) {
     var speakOutput = "";
     let sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-    var statsObject = await statsData(handlerInput);
-    sessionAttributes.previousIntent = sessionAttributes.currentIntent;
-    sessionAttributes.currentIntent = "standings";
     var attributes = await getAttributes(handlerInput);
+
     if (!attributes.hasOwnProperty("stats")) {
       return LaunchRequestHandler.handle(handlerInput);
     }
+    var statsObject = await statsData(handlerInput);
+    sessionAttributes.previousIntent = sessionAttributes.currentIntent;
+    sessionAttributes.currentIntent = "standings";
+    
     var theBase = "appoBlEf8I1VQdU3r";
-    var playerData = await helpers.httpGet(theBase,"&maxRecords=10","PlayerCharts");
+    var playerData = await helpers.httpGet(theBase,"&filterByFormula=IF(HighestScoreLevel!%3DBLANK())&maxRecords=10","PlayerCharts");
     var playerRecords = playerData.records;
     var playersString="";
     var playersString2="";
-    
+    var theNumber = 1;
     for (var i in playerRecords) {
-      var theNumber = 1;
+      
       if(playerRecords[i].fields.HighestScoreLevel === statsObject.highestScoreLevel){
       playersString2 += theNumber + ". " + playerRecords[i].fields.userID +": " +playerRecords[i].fields.HighestScore + " Level: "+playerRecords[i].fields.HighestScoreLevel + "<br>";
       }
       if(playerRecords[i].fields.HighestScoreLevel){
         playersString += theNumber + ". " + playerRecords[i].fields.userID +": " +playerRecords[i].fields.HighestScore + " Level: "+playerRecords[i].fields.HighestScoreLevel + "<br>";
-        speakOutput += theNumber + ". " + playerRecords[i].fields.userID +": " +playerRecords[i].fields.HighestScore + ", Level: "+playerRecords[i].fields.HighestScoreLevel + "";
+        
+        speakOutput += theNumber + ". " + playerRecords[i].fields.userID +": " +playerRecords[i].fields.HighestScore + ", Level: "+playerRecords[i].fields.HighestScoreLevel +' ';
       }   
       theNumber = theNumber + 1;
       }
-      var helpHints = ["If you wish to look at your stats just say my stats or statistics.","Have you play for a bit if so check out the leaderboards by saying rankings or leaderboards.",
+      var helpHints = ["Scroll to the left to see another leaderboard. ","Would you like to level up faster checkout our store by saying, what can I buy.",
 "Did you know there is a move list just ask for it, after you picked your character.", "Are you ready to rumble, if so say lets fight or pick character." ];
-
+      speakOutput += "If you would like to fight just say, let's fight.";
     var title2 = "Your top score: "+statsObject.highestScore + " at level "+ statsObject.highestScoreLevel + ". ";
     var title1 = "Your top score, "+statsObject.highestScore + " with "+ statsObject.topCharacter + ". ";
     if (helpers.supportsAPL(handlerInput)) {
@@ -882,7 +922,6 @@ const YourStandingsHandler = {
                 "title2": title2,
                 "textbox2": playersString2,
                 "hintText": await helpers.randomNoRepeats(helpHints)
-
               }
             }
           }
@@ -956,13 +995,14 @@ const UseExperienceOnCharacterPackHandler = {
     if(sessionAttributes.previousIntent === "useExperiencePack"){
 
     }
+    var stringAdd = "If you have any left you can say use than the type experiance pack or you can select your character by saying , pick character.";
     if (sessionAttributes.expPack === "copper") {
       if (attributes.hasOwnProperty("copperXP") || attributes.copperXP === 0) {
         speakOutput = "I am sorry you need to buy some experience packs. Is there anything else you would like to do like pick character to fight or look at your stats?";
       } else {
         attributes.copperXP = parseInt(attributes.copperXP) - 1;
         attributes.characters[character].charExp = parseInt(attributes.characters[character].charExp) + 200;
-        speakOutput = "I have added two hundred experience points to " + character + '! You have ' + attributes.copperXP + ' copper experience packs left';
+        speakOutput = "I have added two hundred experience points to " + character + '! You have ' + attributes.copperXP + ' copper experience packs left. ' + stringAdd;
       }
     } else if (sessionAttributes.expPack === "silver") {
       if (!attributes.hasOwnProperty("silverXP") || attributes.silverXP === 0) {
@@ -970,7 +1010,7 @@ const UseExperienceOnCharacterPackHandler = {
       } else {
         attributes.silverXP = parseInt(attributes.silver) - 1;
         attributes.characters[character].charExp = parseInt(attributes.characters[character].charExp) + 350;
-        speakOutput = "I have added three hundred and fifty experience points to " + character + '! You have ' + attributes.silverXP + ' silver experience packs left';
+        speakOutput = "I have added three hundred and fifty experience points to " + character + '! You have ' + attributes.silverXP + ' silver experience packs left. ' + stringAdd;
       }
     } else if (sessionAttributes.expPack === "gold") {
       if (!attributes.hasOwnProperty("goldXP") || attributes.goldXP === 0) {
@@ -978,7 +1018,7 @@ const UseExperienceOnCharacterPackHandler = {
       } else {
         attributes.goldXP = parseInt(attributes.goldXP) - 1;
         attributes.characters[character].charExp = parseInt(attributes.characters[character].charExp) + 500;
-        speakOutput = "I have added five hundred experience points to " + character + '! You have ' + attributes.goldXP + ' gold experience packs left';
+        speakOutput = "I have added five hundred experience points to " + character + '! You have ' + attributes.goldXP + ' gold experience packs left. ' + stringAdd;
       }
     }
     await saveAttributes(handlerInput,attributes);
@@ -1183,12 +1223,20 @@ const HelpIntentHandler = {
       Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.HelpIntent';
   },
   async handle(handlerInput) {
+
     var helpHints = ["If you wish to look at your stats just say my stats or statistics.","Have you play for a bit if so check out the leaderboards by saying rankings or leaderboards.",
 "Did you know there is a move list just ask for it, after you picked your character.", "Are you ready to rumble, if so say lets fight or pick character." ];
     var sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     sessionAttributes.previousIntent = sessionAttributes.currentIntent;
     sessionAttributes.currentIntent = "helpIntent";
-    const speakOutput = await helpers.randomNoRepeats(helpHints);
+    var speakOutput;
+    if(sessionAttributes.previousIntent === "moveList"){
+      speakOutput = "Having trouble on knowing what to do? Just say a move name or the move itself, if you don't know the move you may say, move list.";
+    }else if(sessionAttributes.previousIntent === "fightEnd"){
+      speakOutput = "You can now look at the stats or leaderboards, since you are done fighting. Just say, stats or leaderboards.";
+    }else{
+      speakOutput = await helpers.randomNoRepeats(helpHints);
+    }
 
     return handlerInput.responseBuilder
       .speak(speakOutput)
