@@ -879,7 +879,7 @@ const YourStandingsHandler = {
     sessionAttributes.currentIntent = "standings";
     
     var theBase = "appoBlEf8I1VQdU3r";
-    var playerData = await helpers.httpGet(theBase,"&filterByFormula=IF(HighestScoreLevel!%3DBLANK())&maxRecords=10","PlayerCharts");
+    var playerData = await helpers.httpGet(theBase,"&filterByFormula=HighestScoreLevel%3E0&maxRecords=10","PlayerCharts");
     var playerRecords = playerData.records;
     var playersString="";
     var playersString2="";
